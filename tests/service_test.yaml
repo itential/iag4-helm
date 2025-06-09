@@ -1,0 +1,267 @@
+suite: test service template
+templates:
+  - service.yaml
+tests:
+  - it: should render a basic service
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 80
+        targetPort: 8080
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - isAPIVersion:
+          of: v1
+
+  - it: should set correct metadata
+    set:
+      service:
+        name: my-custom-service
+        type: ClusterIP
+        port: 80
+        targetPort: 8080
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-custom-service
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: iag
+
+  - it: should set correct service type
+    set:
+      service:
+        name: test-service
+        type: LoadBalancer
+        port: 80
+        targetPort: 8080
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+
+  - it: should configure ClusterIP service
+    set:
+      service:
+        name: clusterip-service
+        type: ClusterIP
+        port: 3000
+        targetPort: 3000
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports[0].port
+          value: 3000
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 3000
+
+  - it: should configure NodePort service
+    set:
+      service:
+        name: nodeport-service
+        type: NodePort
+        port: 80
+        targetPort: 8080
+    asserts:
+      - equal:
+          path: spec.type
+          value: NodePort
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8080
+
+  - it: should configure LoadBalancer service
+    set:
+      service:
+        name: lb-service
+        type: LoadBalancer
+        port: 443
+        targetPort: 8443
+    asserts:
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.ports[0].port
+          value: 443
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8443
+
+  - it: should set correct port configuration
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 9000
+        targetPort: 9090
+    asserts:
+      - lengthEqual:
+          path: spec.ports
+          count: 1
+      - equal:
+          path: spec.ports[0].name
+          value: http
+      - equal:
+          path: spec.ports[0].port
+          value: 9000
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 9090
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+
+  - it: should handle string targetPort
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 80
+        targetPort: "http-port"
+    asserts:
+      - equal:
+          path: spec.ports[0].targetPort
+          value: "http-port"
+
+  - it: should handle numeric targetPort
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 80
+        targetPort: 8080
+    asserts:
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8080
+
+  - it: should include selector labels
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 80
+        targetPort: 8080
+    asserts:
+      - isNotNull:
+          path: spec.selector
+      - isSubset:
+          path: spec.selector
+          content:
+            app.kubernetes.io/name: iag
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should work with different service names
+    set:
+      service:
+        name: api-gateway-service
+        type: ClusterIP
+        port: 8080
+        targetPort: 8080
+    asserts:
+      - equal:
+          path: metadata.name
+          value: api-gateway-service
+
+  - it: should work with high port numbers
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 65535
+        targetPort: 65534
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 65535
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 65534
+
+  - it: should work with standard HTTP port
+    set:
+      service:
+        name: web-service
+        type: ClusterIP
+        port: 80
+        targetPort: 80
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 80
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 80
+
+  - it: should work with standard HTTPS port
+    set:
+      service:
+        name: secure-service
+        type: ClusterIP
+        port: 443
+        targetPort: 8443
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 443
+      - equal:
+          path: spec.ports[0].targetPort
+          value: 8443
+
+  - it: should always set protocol to TCP
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 80
+        targetPort: 8080
+    asserts:
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+
+  - it: should always set port name to http
+    set:
+      service:
+        name: test-service
+        type: ClusterIP
+        port: 9999
+        targetPort: 8888
+    asserts:
+      - equal:
+          path: spec.ports[0].name
+          value: http
+
+  - it: should work with minimal values
+    set:
+      service:
+        name: minimal-service
+        type: ClusterIP
+        port: 80
+        targetPort: 80
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: minimal-service
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports[0].port
+          value: 80

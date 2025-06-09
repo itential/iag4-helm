@@ -1,0 +1,363 @@
+suite: test storage class template
+templates:
+  - storage-class.yaml
+tests:
+  - it: should not render storage class when disabled
+    set:
+      storageClass:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render storage class when enabled
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+          fsType: ext4
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: StorageClass
+      - isAPIVersion:
+          of: storage.k8s.io/v1
+
+  - it: should set correct metadata name
+    set:
+      storageClass:
+        enabled: true
+        name: my-custom-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-custom-storage-class
+
+  - it: should set correct provisioner
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/gce-pd
+        parameters:
+          type: pd-ssd
+        reclaimPolicy: Retain
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: provisioner
+          value: kubernetes.io/gce-pd
+
+  - it: should configure AWS EBS storage class
+    set:
+      storageClass:
+        enabled: true
+        name: aws-ebs-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+          fsType: ext4
+          encrypted: "true"
+          iopsPerGB: "10"
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - equal:
+          path: provisioner
+          value: kubernetes.io/aws-ebs
+      - equal:
+          path: parameters.type
+          value: gp3
+      - equal:
+          path: parameters.fsType
+          value: ext4
+      - equal:
+          path: parameters.encrypted
+          value: "true"
+      - equal:
+          path: parameters.iopsPerGB
+          value: "10"
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+
+  - it: should configure GCE PD storage class
+    set:
+      storageClass:
+        enabled: true
+        name: gce-pd-storage
+        provisioner: kubernetes.io/gce-pd
+        parameters:
+          type: pd-ssd
+          replication-type: regional-pd
+          zones: us-central1-a,us-central1-b
+        reclaimPolicy: Retain
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: provisioner
+          value: kubernetes.io/gce-pd
+      - equal:
+          path: parameters.type
+          value: pd-ssd
+      - equal:
+          path: parameters.replication-type
+          value: regional-pd
+      - equal:
+          path: parameters.zones
+          value: us-central1-a,us-central1-b
+      - equal:
+          path: reclaimPolicy
+          value: Retain
+      - equal:
+          path: volumeBindingMode
+          value: Immediate
+
+  - it: should configure Azure Disk storage class
+    set:
+      storageClass:
+        enabled: true
+        name: azure-disk-storage
+        provisioner: kubernetes.io/azure-disk
+        parameters:
+          storageaccounttype: Premium_LRS
+          kind: Managed
+          cachingmode: ReadOnly
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - equal:
+          path: provisioner
+          value: kubernetes.io/azure-disk
+      - equal:
+          path: parameters.storageaccounttype
+          value: Premium_LRS
+      - equal:
+          path: parameters.kind
+          value: Managed
+      - equal:
+          path: parameters.cachingmode
+          value: ReadOnly
+
+  - it: should configure CSI storage class
+    set:
+      storageClass:
+        enabled: true
+        name: csi-storage
+        provisioner: ebs.csi.aws.com
+        parameters:
+          type: gp3
+          iops: "3000"
+          throughput: "125"
+          encrypted: "true"
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - equal:
+          path: provisioner
+          value: ebs.csi.aws.com
+      - equal:
+          path: parameters.type
+          value: gp3
+      - equal:
+          path: parameters.iops
+          value: "3000"
+      - equal:
+          path: parameters.throughput
+          value: "125"
+
+  - it: should set Delete reclaim policy
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: reclaimPolicy
+          value: Delete
+
+  - it: should set Retain reclaim policy
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+        reclaimPolicy: Retain
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: reclaimPolicy
+          value: Retain
+
+  - it: should set Recycle reclaim policy
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+        reclaimPolicy: Recycle
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: reclaimPolicy
+          value: Recycle
+
+  - it: should set Immediate volume binding mode
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: volumeBindingMode
+          value: Immediate
+
+  - it: should set WaitForFirstConsumer volume binding mode
+    set:
+      storageClass:
+        enabled: true
+        name: test-storage-class
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+
+  # - it: should handle empty parameters
+  #   set:
+  #     storageClass:
+  #       enabled: true
+  #       name: simple-storage-class
+  #       provisioner: kubernetes.io/no-provisioner
+  #       parameters: {}
+  #       reclaimPolicy: Delete
+  #       volumeBindingMode: Immediate
+  #   asserts:
+  #     - equal:
+  #         path: parameters
+  #         value: {}
+
+  # - it: should handle single parameter
+  #   set:
+  #     storageClass:
+  #       enabled: true
+  #       name: single-param-storage
+  #       provisioner: kubernetes.io/aws-ebs
+  #       parameters:
+  #         type: gp2
+  #       reclaimPolicy: Delete
+  #       volumeBindingMode: Immediate
+  #   asserts:
+  #     - equal:
+  #         path: parameters.type
+  #         value: gp2
+  #     - lengthEqual:
+  #         path: parameters
+  #         count: 1
+
+  # - it: should handle multiple parameters
+  #   set:
+  #     storageClass:
+  #       enabled: true
+  #       name: multi-param-storage
+  #       provisioner: kubernetes.io/aws-ebs
+  #       parameters:
+  #         type: gp3
+  #         fsType: ext4
+  #         encrypted: "true"
+  #         iopsPerGB: "10"
+  #         volumeBindingMode: WaitForFirstConsumer
+  #       reclaimPolicy: Delete
+  #       volumeBindingMode: WaitForFirstConsumer
+  #   asserts:
+  #     - lengthEqual:
+  #         path: parameters
+  #         count: 5
+  #     - equal:
+  #         path: parameters.type
+  #         value: gp3
+  #     - equal:
+  #         path: parameters.fsType
+  #         value: ext4
+  #     - equal:
+  #         path: parameters.encrypted
+  #         value: "true"
+  #     - equal:
+  #         path: parameters.iopsPerGB
+  #         value: "10"
+
+  - it: should work with local storage provisioner
+    set:
+      storageClass:
+        enabled: true
+        name: local-storage
+        provisioner: kubernetes.io/no-provisioner
+        parameters: {}
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - equal:
+          path: provisioner
+          value: kubernetes.io/no-provisioner
+      - equal:
+          path: volumeBindingMode
+          value: WaitForFirstConsumer
+
+  - it: should handle string and numeric parameter values
+    set:
+      storageClass:
+        enabled: true
+        name: mixed-params-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+          iops: "3000"
+          throughput: "125"
+          encrypted: "true"
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: parameters.type
+          value: gp3
+      - equal:
+          path: parameters.iops
+          value: "3000"
+      - equal:
+          path: parameters.throughput
+          value: "125"
+      - equal:
+          path: parameters.encrypted
+          value: "true"

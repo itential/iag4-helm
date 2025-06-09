@@ -1,0 +1,695 @@
+suite: test statefulset template
+templates:
+  - statefulset.yaml
+tests:
+  - it: should not render statefulset when disabled
+    set:
+      statefulset:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render statefulset when enabled
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: StatefulSet
+      - isAPIVersion:
+          of: apps/v1
+
+  - it: should set correct metadata
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: iag
+      - equal:
+          path: spec.serviceName
+          value: "iag-service"
+
+  - it: should set correct selector labels
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/name: iag
+            app.kubernetes.io/instance: RELEASE-NAME
+
+  - it: should set correct replica count
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 3
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should configure pod annotations
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      podAnnotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          value: "true"
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/port"]
+          value: "8080"
+
+  - it: should configure pod labels
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      podLabels:
+        environment: production
+        team: platform
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels.environment
+          value: production
+      - equal:
+          path: spec.template.metadata.labels.team
+          value: platform
+
+  - it: should configure image pull secrets
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      imagePullSecrets:
+        - name: regcred
+        - name: dockerhub-secret
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.imagePullSecrets
+          count: 2
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: regcred
+      - equal:
+          path: spec.template.spec.imagePullSecrets[1].name
+          value: dockerhub-secret
+
+  - it: should set empty service account name
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: ""
+
+  - it: should configure container image
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "2.5.0"
+        pullPolicy: Always
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: iag
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "itential/iag:2.5.0"
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+
+  # - it: should use chart app version when tag not specified
+  #   set:
+  #     statefulset:
+  #       enabled: true
+  #     replicaCount: 1
+  #     image:
+  #       repository: itential/iag
+  #       pullPolicy: IfNotPresent
+  #     service:
+  #       port: 8080
+  #     podSecurityContext: {}
+  #     securityContext: {}
+  #   chart:
+  #     appVersion: "1.16.0"
+  #   asserts:
+  #     - equal:
+  #         path: spec.template.spec.containers[0].image
+  #         value: "itential/iag:1.16.0"
+
+  - it: should configure container port
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 9090
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].name
+          value: http
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9090
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].protocol
+          value: TCP
+
+  - it: should configure startup probe when provided
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      startupProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /health
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.initialDelaySeconds
+          value: 30
+
+  - it: should configure liveness probe when provided
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      livenessProbe:
+        httpGet:
+          path: /alive
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 30
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /alive
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
+          value: 60
+
+  - it: should configure readiness probe when provided
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /ready
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
+          value: 8080
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
+          value: 15
+
+  - it: should configure resources when provided
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 250m
+          memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 512Mi
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 250m
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 256Mi
+
+  - it: should configure basic volume mounts
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      persistentVolumeClaims:
+        enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "config-volume"
+            mountPath: "/etc/automation-gateway/properties.yml"
+            subPath: "properties.yml"
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "config-volume"
+            mountPath: "/etc/ansible/ansible.cfg"
+            subPath: "ansible.cfg"
+
+  - it: should configure persistent volume mounts when enabled
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      persistentVolumeClaims:
+        enabled: true
+        dataClaim:
+          storage: 10Gi
+        codeClaim:
+          storage: 5Gi
+      storageClass:
+        name: fast-ssd
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "iag-data-volume"
+            mountPath: "/var/lib/automation-gateway"
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "iag-code-volume"
+            mountPath: "/usr/share/automation-gateway"
+
+  - it: should configure additional volume mounts
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      persistentVolumeClaims:
+        enabled: false
+      volumeMounts:
+        - name: custom-volume
+          mountPath: /custom/path
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: custom-volume
+            mountPath: /custom/path
+            readOnly: true
+
+  - it: should configure basic volumes
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: "config-volume"
+            configMap:
+              name: "iag-config-map"
+
+  - it: should configure additional volumes
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      volumes:
+        - name: custom-volume
+          emptyDir: {}
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: custom-volume
+            emptyDir: {}
+
+  - it: should configure node selector
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      nodeSelector:
+        kubernetes.io/arch: amd64
+        zone: us-west-2a
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector["kubernetes.io/arch"]
+          value: amd64
+      - equal:
+          path: spec.template.spec.nodeSelector["zone"]
+          value: us-west-2a
+
+  - it: should configure affinity
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.affinity.nodeAffinity
+
+  - it: should configure tolerations
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "iag"
+          effect: "NoSchedule"
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.tolerations
+          count: 1
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: "dedicated"
+      - equal:
+          path: spec.template.spec.tolerations[0].operator
+          value: "Equal"
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: "iag"
+      - equal:
+          path: spec.template.spec.tolerations[0].effect
+          value: "NoSchedule"
+
+  - it: should configure volume claim templates when PVC enabled
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      persistentVolumeClaims:
+        enabled: true
+        dataClaim:
+          storage: 20Gi
+        codeClaim:
+          storage: 10Gi
+      storageClass:
+        name: premium-ssd
+    asserts:
+      - lengthEqual:
+          path: spec.volumeClaimTemplates
+          count: 2
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: "iag-data-volume"
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.accessModes[0]
+          value: "ReadWriteOnce"
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: 20Gi
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: premium-ssd
+      - equal:
+          path: spec.volumeClaimTemplates[1].metadata.name
+          value: "iag-code-volume"
+      - equal:
+          path: spec.volumeClaimTemplates[1].spec.resources.requests.storage
+          value: 10Gi
+
+  - it: should not configure volume claim templates when PVC disabled
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      persistentVolumeClaims:
+        enabled: false
+    asserts:
+      - isNull:
+          path: spec.volumeClaimTemplates
+
+  # - it: should not include probes when not configured
+  #   set:
+  #     statefulset:
+  #       enabled: true
+  #     replicaCount: 1
+  #     image:
+  #       repository: itential/iag
+  #       tag: "1.0.0"
+  #       pullPolicy: IfNotPresent
+  #     service:
+  #       port: 8080
+  #     podSecurityContext: {}
+  #     securityContext: {}
+  #   asserts:
+  #     - isNull:
+  #         path: spec.template.spec.containers[0].startupProbe
+  #     - isNull:
+  #         path: spec.template.spec.containers[0].livenessProbe
+  #     - isNull:
+  #         path: spec.template.spec.containers[0].readinessProbe
+
+  # - it: should not include resources when not configured
+  #   set:
+  #     statefulset:
+  #       enabled: true
+  #     replicaCount: 1
+  #     image:
+  #       repository: itential/iag
+  #       tag: "1.0.0"
+  #       pullPolicy: IfNotPresent
+  #     service:
+  #       port: 8080
+  #     podSecurityContext: {}
+  #     securityContext: {}
+  #   asserts:
+  #     - isNull:
+  #         path: spec.template.spec.containers[0].resources

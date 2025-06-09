@@ -1,0 +1,314 @@
+suite: test ingress template
+templates:
+  - ingress.yaml
+tests:
+  - it: should not render ingress when disabled
+    set:
+      ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render ingress when enabled
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+      - isAPIVersion:
+          of: networking.k8s.io/v1
+
+  - it: should set correct metadata
+    set:
+      ingress:
+        enabled: true
+        name: my-custom-ingress
+        className: nginx
+        annotations:
+          nginx.ingress.kubernetes.io/rewrite-target: /
+          cert-manager.io/cluster-issuer: letsencrypt
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - equal:
+          path: metadata.name
+          value: my-custom-ingress
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/rewrite-target"]
+          value: /
+      - equal:
+          path: metadata.annotations["cert-manager.io/cluster-issuer"]
+          value: letsencrypt
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: iag
+
+  - it: should set ingress class name
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: traefik
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: traefik
+
+  - it: should configure single host with single path
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: api.example.com
+            paths:
+              - path: /api
+                pathType: Prefix
+      service:
+        name: api-service
+        port: 8080
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: api.example.com
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /api
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.name
+          value: api-service
+      - equal:
+          path: spec.rules[0].http.paths[0].backend.service.port.number
+          value: 8080
+
+  - it: should configure multiple hosts with multiple paths
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: api.example.com
+            paths:
+              - path: /api/v1
+                pathType: Prefix
+              - path: /api/v2
+                pathType: Exact
+          - host: admin.example.com
+            paths:
+              - path: /admin
+                pathType: Prefix
+      service:
+        name: multi-service
+        port: 3000
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 2
+      - equal:
+          path: spec.rules[0].host
+          value: api.example.com
+      - lengthEqual:
+          path: spec.rules[0].http.paths
+          count: 2
+      - equal:
+          path: spec.rules[0].http.paths[0].path
+          value: /api/v1
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+      - equal:
+          path: spec.rules[0].http.paths[1].path
+          value: /api/v2
+      - equal:
+          path: spec.rules[0].http.paths[1].pathType
+          value: Exact
+      - equal:
+          path: spec.rules[1].host
+          value: admin.example.com
+      - equal:
+          path: spec.rules[1].http.paths[0].path
+          value: /admin
+
+  - it: should configure TLS with single certificate
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        tls:
+          - secretName: example-tls
+            hosts:
+              - example.com
+              - www.example.com
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - lengthEqual:
+          path: spec.tls
+          count: 1
+      - equal:
+          path: spec.tls[0].secretName
+          value: example-tls
+      - lengthEqual:
+          path: spec.tls[0].hosts
+          count: 2
+      - contains:
+          path: spec.tls[0].hosts
+          content: example.com
+      - contains:
+          path: spec.tls[0].hosts
+          content: www.example.com
+
+  - it: should configure multiple TLS certificates
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        tls:
+          - secretName: api-tls
+            hosts:
+              - api.example.com
+          - secretName: admin-tls
+            hosts:
+              - admin.example.com
+        hosts:
+          - host: api.example.com
+            paths:
+              - path: /
+                pathType: Prefix
+          - host: admin.example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - lengthEqual:
+          path: spec.tls
+          count: 2
+      - equal:
+          path: spec.tls[0].secretName
+          value: api-tls
+      - equal:
+          path: spec.tls[1].secretName
+          value: admin-tls
+
+  - it: should not include TLS when not configured
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - isNull:
+          path: spec.tls
+
+  - it: should handle pathType for older Kubernetes versions
+    capabilities:
+      majorVersion: 1
+      minorVersion: 17
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - isNull:
+          path: spec.rules[0].http.paths[0].pathType
+
+  - it: should include pathType for newer Kubernetes versions
+    capabilities:
+      majorVersion: 1
+      minorVersion: 18
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - equal:
+          path: spec.rules[0].http.paths[0].pathType
+          value: Prefix
+
+  # - it: should handle missing annotations gracefully
+  #   set:
+  #     ingress:
+  #       enabled: true
+  #       name: test-ingress
+  #       className: nginx
+  #       hosts:
+  #         - host: example.com
+  #           paths:
+  #             - path: /
+  #               pathType: Prefix
+  #     service:
+  #       name: test-service
+  #       port: 80
+  #   asserts:
+  #     - isNull:
+  #         path: metadata.annotations
