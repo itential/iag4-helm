@@ -1,0 +1,136 @@
+{{- if .Values.statefulset.enabled -}}
+# Copyright (c) 2024, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Source: iag/templates/statefulset.yaml
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name:  {{ include "iag.fullname" . }}
+  labels:
+    {{- include "iag.labels" . | nindent 4 }}
+spec:
+  serviceName: "iag-service"
+  selector:
+    matchLabels:
+      {{- include "iag.selectorLabels" . | nindent 6 }}
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "iag.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: ""
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ .Values.service.port }}
+            protocol: TCP
+        {{- if .Values.startupProbe }}
+        startupProbe:
+          {{- toYaml .Values.startupProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.resources }}
+        resources:  {{- toYaml .Values.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+          # Uses a configmap to mount a config file at the below path
+          - name: "config-volume"
+            mountPath: "/etc/automation-gateway/properties.yml"
+            subPath: "properties.yml"
+          {{- range $path, $_ := .Files.Glob "files/certificates/*.*" }}
+          - name: "config-certs"
+            mountPath: "/etc/ssl/certs/{{ base ($path) }}"
+            subPath: {{ base ($path) }}
+          {{- end }}
+          # Uses a configmap to mount a customized ansible config file at the below path
+          - name: "config-volume"
+            mountPath: "/etc/ansible/ansible.cfg"
+            subPath: "ansible.cfg"
+          {{- if .Values.persistentVolumeClaims.enabled }}
+          # Uses a persistent volume claim to mount a directory where the IAG sqlite database
+          # files and log files are stored. Must be unique per container
+          - name: "iag-data-volume"
+            mountPath: "/var/lib/automation-gateway"
+          # Uses a persistent volume claim to mount a directory where the IAG application will
+          # store any customer authored scripts and device inventory files.
+          - name: "iag-code-volume"
+            mountPath: "/usr/share/automation-gateway"
+          {{- end }}
+        {{- with .Values.volumeMounts }}
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      volumes:
+        # config-volume is a configmap that contains files that are required by the IAG
+        # application and can be customized.
+        - name: "config-volume"
+          configMap:
+            name: "iag-config-map"
+        {{- if .Files.Glob "files/certificates/*.*" }}
+        - name: "config-certs"
+          secret:
+            secretName: "iag-certificates"
+        {{- end }}
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.persistentVolumeClaims.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: "iag-data-volume"
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: {{ .Values.persistentVolumeClaims.dataClaim.storage }}
+        storageClassName: {{ .Values.storageClass.name }}
+    - metadata:
+        name: "iag-code-volume"
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: {{ .Values.persistentVolumeClaims.codeClaim.storage }}
+        storageClassName: {{ .Values.storageClass.name }}
+  {{- end }}
+{{- end }}

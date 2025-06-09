@@ -1,0 +1,183 @@
+# Copyright (c) 2024, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+---
+# Default values for iag.
+
+replicaCount: 1
+
+# image The Itential image to use, its version, and its location
+image:
+  repository: "itential.jfrog.io/itential-docker/automation-gateway"
+  name: "itential.jfrog.io/itential-docker/automation-gateway"
+  tag: "2023.2.10"
+  pullPolicy: "IfNotPresent"
+
+# imagePullSecrets The secrets object used to pull the image from the repo
+imagePullSecrets:
+  - name: "jfrogcred"
+
+# storageClass This is used to configure the storage class object which governs
+# how the mounted volumes are created.
+storageClass:
+  enabled: true
+  name: "iag-ebs-gp3"
+  provisioner: "ebs.csi.aws.com"
+  reclaimPolicy: "Retain"
+  volumeBindingMode: "WaitForFirstConsumer"
+  parameters:
+    type: "gp3"
+
+# persistentVolumeClaims These are used for Itential Automation Gateway persistence
+# and for any customer specific assets (ansible or python scripts).
+persistentVolumeClaims:
+  # dataClaim This represents the claim for the persistence for the sqlite data
+  # required by IAG.
+  enabled: true
+  dataClaim:
+    # storage The requested amount of storage
+    storage: "10Gi"
+  # codeClaim This represents the claim for the location of all the customer authored
+  # scripts, ansible code, and other customizations.
+  codeClaim:
+    # storage The requested amount of storage
+    storage: "10Gi"
+
+# service The Kubernetes service object for this application
+service:
+  # type The service type
+  type: "ClusterIP"
+  # name The name of this Kubernetes service object
+  name: "iag-service"
+  # port The port that this service object is listening on
+  port: 80
+  # targetPort The application port that this service object will send requests to
+  targetPort: 8083
+
+# ingress The Kubernetes ingress object for this application.
+ingress:
+  # enabled The ingress object can be disabled and will not be created with this set to false
+  enabled: true
+  # name The name of this Kubernetes ingress object
+  name: "iag-ingress"
+  # className The ingress controller class name
+  className: "alb"
+  # annotations The annotations for this ingress object. These are passed into the template
+  # as is and will render as you see here.
+  annotations:
+    alb.ingress.kubernetes.io/backend-protocol: "HTTP"
+    alb.ingress.kubernetes.io/healthcheck-path: "/api/v2.0/poll"
+    alb.ingress.kubernetes.io/healthcheck-port: "8083"
+    alb.ingress.kubernetes.io/healthcheck-protocol: "HTTP"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/load-balancer-name: "itential-iag-lb"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-group-attributes: "stickiness.enabled=true"
+    alb.ingress.kubernetes.io/target-type: "ip"
+  # hosts The list of hosts for this ingress and their associated properties
+  hosts:
+    - host: "iag.example.com"
+      paths:
+        - path: "/"
+          pathType: "Prefix"
+  tls: []
+
+statefulset:
+  enabled: true
+
+podAnnotations: {}
+podLabels: {}
+securityContext: {}
+
+# podSecurityContext The pods will mount some persistent volumes. These settings
+# allow for that to happen.
+podSecurityContext:
+  fsGroup: 1001
+  runAsUser: 1001
+  runAsNonRoot: true
+
+resources:
+  limits:
+    cpu: "1000m"
+    memory: "256Mi"
+  requests:
+    cpu: "1000m"
+    memory: "256Mi"
+
+# The liveness probe used to determine if the container is alive. If the liveness probe fails,
+# the kubelet kills the container, and the container is subjected to its restart policy. If a
+# container does not provide a liveness probe, the default state is Success.
+livenessProbe:
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+  httpGet:
+    path: "/api/v2.0/poll"
+    port: 8083
+
+# The readiness probe used to determine if the container is ready to accept requests. If the
+# readiness probe fails, the endpoints controller removes the pod’s IP address from the
+# endpoints of all services that match the pod. The default state of readiness before the
+# initial delay is failure. If a container does not provide a readiness probe, the default
+# state is success.
+readinessProbe:
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+  httpGet:
+    path: "/api/v2.0/poll"
+    port: 8083
+
+# The startup probe used to allow some time for the application to start up. The application
+# will have a maximum of 3 minutes (18 * 10 = 180s) to finish its startup. Once the startup
+# probe has succeeded once, the liveness probe takes over.
+startupProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 18
+  successThreshold: 1
+  httpGet:
+    path: "/api/v2.0/poll"
+    port: 8083
+
+# propertiesYaml This is used to generate the IAG config file that the IAG
+# application will use. These properties are all passed into the configmap
+# which is then mounted as a file and read by the application.
+configMap:
+  enabled: true
+  propertiesYaml:
+    port: 8083
+    bindAddress: "0.0.0.0"
+    serverThreads: 8
+    logDir: "/var/lib/automation-gateway"
+    dataDir: "/var/lib/automation-gateway"
+    enableAnsible: true
+    ansibleDebug: false
+    customDir: "/usr/share/automation-gateway"
+    enableHttp: false
+    enableNetconf: true
+    enableNetmiko: false
+    enableNornir: false
+    enableScripts: true
+    enablePythonVenvs: true
+    enableGrpc: false
+    enableGit: true
+
+# volumes Additional volumes on the output Deployment definition.
+volumes: []
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts: []
+
+nodeSelector:
+  itential.io/app: "iag"
+
+tolerations:
+- effect: "NoSchedule"
+  key: "itential.io/role"
+  operator: "Equal"
+  value: "iag"
+
+affinity: {}
