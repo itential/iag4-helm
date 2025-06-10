@@ -256,8 +256,8 @@ tests:
           value: WaitForFirstConsumer
 
   # - it: should handle empty parameters
-  #   set:
-  #     storageClass:
+  #   values:
+  #     - storageClass:
   #       enabled: true
   #       name: simple-storage-class
   #       provisioner: kubernetes.io/no-provisioner
