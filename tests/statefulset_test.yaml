@@ -264,22 +264,17 @@ tests:
         port: 8080
       podSecurityContext: {}
       securityContext: {}
-      startupProbe:
-        httpGet:
-          path: /health
-          port: 8080
-        initialDelaySeconds: 30
-        periodSeconds: 10
+      startupProbeEnabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.path
-          value: /health
+          value: "/api/v2.0/poll"
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.port
-          value: 8080
+          value: 8083
       - equal:
           path: spec.template.spec.containers[0].startupProbe.initialDelaySeconds
-          value: 30
+          value: 10
 
   - it: should configure liveness probe when provided
     set:
@@ -294,22 +289,14 @@ tests:
         port: 8080
       podSecurityContext: {}
       securityContext: {}
-      livenessProbe:
-        httpGet:
-          path: /alive
-          port: 8080
-        initialDelaySeconds: 60
-        periodSeconds: 30
+      livenessProbeEnabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.path
-          value: /alive
+          value: "/api/v2.0/poll"
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.port
-          value: 8080
-      - equal:
-          path: spec.template.spec.containers[0].livenessProbe.initialDelaySeconds
-          value: 60
+          value: 8083
 
   - it: should configure readiness probe when provided
     set:
@@ -324,22 +311,14 @@ tests:
         port: 8080
       podSecurityContext: {}
       securityContext: {}
-      readinessProbe:
-        httpGet:
-          path: /ready
-          port: 8080
-        initialDelaySeconds: 15
-        periodSeconds: 5
+      readinessProbeEnabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
-          value: /ready
+          value: /api/v2.0/poll
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
-          value: 8080
-      - equal:
-          path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
-          value: 15
+          value: 8083
 
   - it: should configure resources when provided
     set:
@@ -656,26 +635,26 @@ tests:
       - isNull:
           path: spec.volumeClaimTemplates
 
-  # - it: should not include probes when not configured
-  #   set:
-  #     statefulset:
-  #       enabled: true
-  #     replicaCount: 1
-  #     image:
-  #       repository: itential/iag
-  #       tag: "1.0.0"
-  #       pullPolicy: IfNotPresent
-  #     service:
-  #       port: 8080
-  #     podSecurityContext: {}
-  #     securityContext: {}
-  #   asserts:
-  #     - isNull:
-  #         path: spec.template.spec.containers[0].startupProbe
-  #     - isNull:
-  #         path: spec.template.spec.containers[0].livenessProbe
-  #     - isNull:
-  #         path: spec.template.spec.containers[0].readinessProbe
+  - it: should not include probes when not configured
+    set:
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+    asserts:
+      - isNull:
+          path: spec.template.spec.containers[0].startupProbe
+      - isNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - isNull:
+          path: spec.template.spec.containers[0].readinessProbe
 
   # - it: should not include resources when not configured
   #   set:

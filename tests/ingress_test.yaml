@@ -295,20 +295,20 @@ tests:
           path: spec.rules[0].http.paths[0].pathType
           value: Prefix
 
-  # - it: should handle missing annotations gracefully
-  #   set:
-  #     ingress:
-  #       enabled: true
-  #       name: test-ingress
-  #       className: nginx
-  #       hosts:
-  #         - host: example.com
-  #           paths:
-  #             - path: /
-  #               pathType: Prefix
-  #     service:
-  #       name: test-service
-  #       port: 80
-  #   asserts:
-  #     - isNull:
-  #         path: metadata.annotations
+  - it: should handle missing annotations gracefully
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - isNull:
+          path: metadata.annotations

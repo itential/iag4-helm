@@ -255,68 +255,62 @@ tests:
           path: volumeBindingMode
           value: WaitForFirstConsumer
 
-  # - it: should handle empty parameters
-  #   values:
-  #     - storageClass:
-  #       enabled: true
-  #       name: simple-storage-class
-  #       provisioner: kubernetes.io/no-provisioner
-  #       parameters: {}
-  #       reclaimPolicy: Delete
-  #       volumeBindingMode: Immediate
-  #   asserts:
-  #     - equal:
-  #         path: parameters
-  #         value: {}
+  - it: should handle empty parameters
+    set:
+      storageClass:
+        enabled: true
+        name: simple-storage-class
+        provisioner: kubernetes.io/no-provisioner
+        parameters: {}
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: parameters
+          value: {}
 
-  # - it: should handle single parameter
-  #   set:
-  #     storageClass:
-  #       enabled: true
-  #       name: single-param-storage
-  #       provisioner: kubernetes.io/aws-ebs
-  #       parameters:
-  #         type: gp2
-  #       reclaimPolicy: Delete
-  #       volumeBindingMode: Immediate
-  #   asserts:
-  #     - equal:
-  #         path: parameters.type
-  #         value: gp2
-  #     - lengthEqual:
-  #         path: parameters
-  #         count: 1
+  - it: should handle single parameter
+    set:
+      storageClass:
+        enabled: true
+        name: single-param-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp2
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - equal:
+          path: parameters.type
+          value: gp2
 
-  # - it: should handle multiple parameters
-  #   set:
-  #     storageClass:
-  #       enabled: true
-  #       name: multi-param-storage
-  #       provisioner: kubernetes.io/aws-ebs
-  #       parameters:
-  #         type: gp3
-  #         fsType: ext4
-  #         encrypted: "true"
-  #         iopsPerGB: "10"
-  #         volumeBindingMode: WaitForFirstConsumer
-  #       reclaimPolicy: Delete
-  #       volumeBindingMode: WaitForFirstConsumer
-  #   asserts:
-  #     - lengthEqual:
-  #         path: parameters
-  #         count: 5
-  #     - equal:
-  #         path: parameters.type
-  #         value: gp3
-  #     - equal:
-  #         path: parameters.fsType
-  #         value: ext4
-  #     - equal:
-  #         path: parameters.encrypted
-  #         value: "true"
-  #     - equal:
-  #         path: parameters.iopsPerGB
-  #         value: "10"
+  - it: should handle multiple parameters
+    set:
+      storageClass:
+        enabled: true
+        name: multi-param-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+          fsType: ext4
+          encrypted: "true"
+          iopsPerGB: "10"
+          volumeBindingMode: WaitForFirstConsumer
+        reclaimPolicy: Delete
+        volumeBindingMode: WaitForFirstConsumer
+    asserts:
+      - equal:
+          path: parameters.type
+          value: gp3
+      - equal:
+          path: parameters.fsType
+          value: ext4
+      - equal:
+          path: parameters.encrypted
+          value: "true"
+      - equal:
+          path: parameters.iopsPerGB
+          value: "10"
 
   - it: should work with local storage provisioner
     set:
