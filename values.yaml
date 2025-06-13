@@ -7,6 +7,9 @@ replicaCount: 1
 
 # image The Itential image to use, its version, and its location
 image:
+  repository: 497639811223.dkr.ecr.us-east-2.amazonaws.com/automation-gateway
+  pullPolicy: IfNotPresent
+  tag:
 
 # imagePullSecrets The secrets object used to pull the image from the repo
 imagePullSecrets: []
