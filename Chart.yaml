@@ -3,16 +3,8 @@
 ---
 apiVersion: v2
 name: iag
-description: A Helm chart for Kubernetes that can build an Itential Automation Gateway environment (IAG)
-
-# A chart can be either an 'application' or a 'library' chart.
-#
-# Application charts are a collection of templates that can be packaged into versioned archives
-# to be deployed.
-#
-# Library charts provide useful utilities or functions for the chart developer. They're included as
-# a dependency of application charts to inject those utilities and functions into the rendering
-# pipeline. Library charts do not define any templates and therefore cannot be deployed.
+description: A Helm chart for Kubernetes that can build an Itential Automation Gateway environment (IAG) version 4.
+icon: https://www.itential.com/wp-content/uploads/2023/12/Product-Icon_IAG.png
 type: application
 
 # This is the chart version. This version number should be incremented each time you make changes
@@ -24,4 +16,4 @@ version: 1.0.0
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "2023.3.5"
+appVersion: "4.3.4"
