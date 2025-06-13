@@ -7,25 +7,23 @@ replicaCount: 1
 
 # image The Itential image to use, its version, and its location
 image:
-  repository: "itential.jfrog.io/itential-docker/automation-gateway"
-  name: "itential.jfrog.io/itential-docker/automation-gateway"
-  tag: "2023.2.10"
-  pullPolicy: "IfNotPresent"
 
 # imagePullSecrets The secrets object used to pull the image from the repo
-imagePullSecrets:
-  - name: "jfrogcred"
+imagePullSecrets: []
+
+# # ServiceAccount with IRSA
+serviceAccount:
+  name:
 
 # storageClass This is used to configure the storage class object which governs
 # how the mounted volumes are created.
 storageClass:
   enabled: true
   name: "iag-ebs-gp3"
-  provisioner: "ebs.csi.aws.com"
+  provisioner: "" # suggested ebs.csi.aws.com
   reclaimPolicy: "Retain"
   volumeBindingMode: "WaitForFirstConsumer"
   parameters:
-    type: "gp3"
 
 # persistentVolumeClaims These are used for Itential Automation Gateway persistence
 # and for any customer specific assets (ansible or python scripts).
@@ -60,19 +58,10 @@ ingress:
   # name The name of this Kubernetes ingress object
   name: "iag-ingress"
   # className The ingress controller class name
-  className: "alb"
+  className: ""
   # annotations The annotations for this ingress object. These are passed into the template
-  # as is and will render as you see here.
+  # as is and will render the contents as you see here.
   annotations:
-    alb.ingress.kubernetes.io/backend-protocol: "HTTP"
-    alb.ingress.kubernetes.io/healthcheck-path: "/api/v2.0/poll"
-    alb.ingress.kubernetes.io/healthcheck-port: "8083"
-    alb.ingress.kubernetes.io/healthcheck-protocol: "HTTP"
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/load-balancer-name: "itential-iag-lb"
-    alb.ingress.kubernetes.io/scheme: "internet-facing"
-    alb.ingress.kubernetes.io/target-group-attributes: "stickiness.enabled=true"
-    alb.ingress.kubernetes.io/target-type: "ip"
   # hosts The list of hosts for this ingress and their associated properties
   hosts:
     - host: "iag.example.com"
@@ -98,6 +87,7 @@ podSecurityContext:
   runAsUser: 1001
   runAsNonRoot: true
 
+resourcesEnabled: true
 resources:
   limits:
     cpu: "1000m"
@@ -108,7 +98,9 @@ resources:
 
 # The liveness probe used to determine if the container is alive. If the liveness probe fails,
 # the kubelet kills the container, and the container is subjected to its restart policy. If a
-# container does not provide a liveness probe, the default state is Success.
+# container does not provide a liveness probe, the default state is Success. These are suggested
+# values.
+livenessProbeEnabled: false
 livenessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
@@ -122,7 +114,8 @@ livenessProbe:
 # readiness probe fails, the endpoints controller removes the pod’s IP address from the
 # endpoints of all services that match the pod. The default state of readiness before the
 # initial delay is failure. If a container does not provide a readiness probe, the default
-# state is success.
+# state is success. These are suggested values.
+readinessProbeEnabled: false
 readinessProbe:
   periodSeconds: 10
   timeoutSeconds: 5
@@ -134,7 +127,8 @@ readinessProbe:
 
 # The startup probe used to allow some time for the application to start up. The application
 # will have a maximum of 3 minutes (18 * 10 = 180s) to finish its startup. Once the startup
-# probe has succeeded once, the liveness probe takes over.
+# probe has succeeded once, the liveness probe takes over. These are suggested values.
+startupProbeEnabled: false
 startupProbe:
   initialDelaySeconds: 10
   periodSeconds: 10
