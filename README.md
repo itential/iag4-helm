@@ -87,5 +87,5 @@ This volume is intended to store any custom assets that the user is bringing to 
 The chart comes with a suite of unit tests. Those can be executed by running:
 
 ```bash
-helm unittest . -f values.yaml
+helm unittest . --values values.yaml
 ```
