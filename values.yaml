@@ -5,6 +5,9 @@
 
 replicaCount: 1
 
+applicationPort: 8083
+useTLS: false
+
 # image The Itential image to use, its version, and its location
 image:
   repository: 497639811223.dkr.ecr.us-east-2.amazonaws.com/automation-gateway
@@ -17,6 +20,20 @@ imagePullSecrets: []
 # # ServiceAccount with IRSA
 serviceAccount:
   name:
+
+issuer:
+  enabled: false
+  name: iag-ca-issuer
+  caSecretName:
+
+certificate:
+  enabled: false
+  issuerRef:
+    name: iag-ca-issuer
+    kind: Issuer
+  renewBefore:
+  duration:
+  hostname:
 
 # storageClass This is used to configure the storage class object which governs
 # how the mounted volumes are created.
@@ -51,8 +68,6 @@ service:
   name: "iag-service"
   # port The port that this service object is listening on
   port: 80
-  # targetPort The application port that this service object will send requests to
-  targetPort: 8083
 
 # ingress The Kubernetes ingress object for this application.
 ingress:
@@ -103,44 +118,38 @@ resources:
 # the kubelet kills the container, and the container is subjected to its restart policy. If a
 # container does not provide a liveness probe, the default state is Success. These are suggested
 # values.
-livenessProbeEnabled: false
 livenessProbe:
+  enabled: false
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
-  httpGet:
-    path: "/api/v2.0/poll"
-    port: 8083
+  path: "/api/v2.0/poll"
 
 # The readiness probe used to determine if the container is ready to accept requests. If the
 # readiness probe fails, the endpoints controller removes the pod’s IP address from the
 # endpoints of all services that match the pod. The default state of readiness before the
 # initial delay is failure. If a container does not provide a readiness probe, the default
 # state is success. These are suggested values.
-readinessProbeEnabled: false
 readinessProbe:
+  readinessProbe: false
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
-  httpGet:
-    path: "/api/v2.0/poll"
-    port: 8083
+  path: "/api/v2.0/poll"
 
 # The startup probe used to allow some time for the application to start up. The application
 # will have a maximum of 3 minutes (18 * 10 = 180s) to finish its startup. Once the startup
 # probe has succeeded once, the liveness probe takes over. These are suggested values.
-startupProbeEnabled: false
 startupProbe:
+  enabled: false
   initialDelaySeconds: 10
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 18
   successThreshold: 1
-  httpGet:
-    path: "/api/v2.0/poll"
-    port: 8083
+  path: "/api/v2.0/poll"
 
 # propertiesYaml This is used to generate the IAG config file that the IAG
 # application will use. These properties are all passed into the configmap
@@ -148,21 +157,21 @@ startupProbe:
 configMap:
   enabled: true
   propertiesYaml:
-    port: 8083
     bindAddress: "0.0.0.0"
     serverThreads: 8
     logDir: "/var/lib/automation-gateway"
     dataDir: "/var/lib/automation-gateway"
+    # LDAP configuration properties
     enableAnsible: true
     ansibleDebug: false
     customDir: "/usr/share/automation-gateway"
-    enableHttp: false
+    enableHttp: true
     enableNetconf: true
-    enableNetmiko: false
-    enableNornir: false
+    enableNetmiko: true
+    enableNornir: true
     enableScripts: true
     enablePythonVenvs: true
-    enableGrpc: false
+    enableGrpc: true
     enableGit: true
 
 # volumes Additional volumes on the output Deployment definition.

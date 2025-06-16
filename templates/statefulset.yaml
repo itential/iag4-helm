@@ -44,17 +44,39 @@ spec:
           - name: http
             containerPort: {{ .Values.service.port }}
             protocol: TCP
-        {{- if .Values.startupProbeEnabled }}
+        {{- if .Values.startupProbe.enabled }}
         startupProbe:
-          {{- toYaml .Values.startupProbe | nindent 10 }}
+          failureThreshold: {{ .Values.startupProbe.failureThreshold }}
+          httpGet:
+            path: {{ .Values.startupProbe.path }}
+            port: {{ .Values.applicationPort }}
+            scheme: {{ ternary "HTTPS" "HTTP" .Values.useTLS }}
+          initialDelaySeconds: {{ .Values.startupProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.startupProbe.periodSeconds }}
+          successThreshold: {{ .Values.startupProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.startupProbe.timeoutSeconds }}
         {{- end }}
-        {{- if .Values.livenessProbeEnabled }}
+        {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
-          {{- toYaml .Values.livenessProbe | nindent 10 }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          httpGet:
+            path: {{ .Values.livenessProbe.path }}
+            port: {{ .Values.applicationPort }}
+            scheme: {{ ternary "HTTPS" "HTTP" .Values.useTLS }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
         {{- end }}
-        {{- if .Values.readinessProbeEnabled }}
+        {{- if .Values.readinessProbe.enabled }}
         readinessProbe:
-          {{- toYaml .Values.readinessProbe | nindent 10 }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          httpGet:
+            path: {{ .Values.readinessProbe.path }}
+            port: {{ .Values.applicationPort }}
+            scheme: {{ ternary "HTTPS" "HTTP" .Values.useTLS }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
         {{- end }}
         {{- if .Values.resourcesEnabled }}
         resources:  {{- toYaml .Values.resources | nindent 10 }}
@@ -64,10 +86,10 @@ spec:
           - name: "config-volume"
             mountPath: "/etc/automation-gateway/properties.yml"
             subPath: "properties.yml"
-          {{- range $path, $_ := .Files.Glob "files/certificates/*.*" }}
-          - name: "config-certs"
-            mountPath: "/etc/ssl/certs/{{ base ($path) }}"
-            subPath: {{ base ($path) }}
+          {{- if .Values.useTLS }}
+          - name: gateway-cert-volume
+            mountPath: /etc/ssl/gateway
+            readOnly: true
           {{- end }}
           # Uses a configmap to mount a customized ansible config file at the below path
           - name: "config-volume"
@@ -92,10 +114,10 @@ spec:
         - name: "config-volume"
           configMap:
             name: "iag-config-map"
-        {{- if .Files.Glob "files/certificates/*.*" }}
-        - name: "config-certs"
+        {{- if .Values.useTLS }}
+        - name: gateway-cert-volume
           secret:
-            secretName: "iag-certificates"
+            secretName: {{ include "iag.fullname" . }}-tls-secret
         {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}

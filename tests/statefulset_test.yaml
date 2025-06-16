@@ -264,7 +264,7 @@ tests:
         port: 8080
       podSecurityContext: {}
       securityContext: {}
-      startupProbeEnabled: true
+      startupProbe.enabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.path
@@ -289,7 +289,7 @@ tests:
         port: 8080
       podSecurityContext: {}
       securityContext: {}
-      livenessProbeEnabled: true
+      livenessProbe.enabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.path
@@ -311,7 +311,7 @@ tests:
         port: 8080
       podSecurityContext: {}
       securityContext: {}
-      readinessProbeEnabled: true
+      readinessProbe.enabled: true
     asserts:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.path
