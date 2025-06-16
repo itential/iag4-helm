@@ -5,8 +5,8 @@
 
 replicaCount: 1
 
-applicationPort: 8083
-useTLS: false
+applicationPort: 8443
+useTLS: true
 
 # image The Itential image to use, its version, and its location
 image:
@@ -67,7 +67,7 @@ service:
   # name The name of this Kubernetes service object
   name: "iag-service"
   # port The port that this service object is listening on
-  port: 80
+  port: 443
 
 # ingress The Kubernetes ingress object for this application.
 ingress:
@@ -176,15 +176,14 @@ affinity: {}
 
 applicationSettings:
   env:
-    automation_gateway_port: 8083
     automation_gateway_bind_address: "0.0.0.0"
     automation_gateway_http_server_threads: 8
     automation_gateway_global_log_directory: "/var/lib/automation-gateway"
     automation_gateway_logging_level: 'INFO'
 
-    # automation_gateway_server_certfile: ""
-    # automation_gateway_server_keyfile: ""
-    # automation_gateway_server_cabundle: ""
+    automation_gateway_server_certfile: "/etc/ssl/certs/gateway/server.crt"
+    automation_gateway_server_keyfile: "/etc/ssl/certs/gateway/server.key"
+    automation_gateway_server_cabundle: "/etc/ssl/certs/gateway/ca-bundle.crt"
 
     automation_gateway_data_file: "sqlite:////var/lib/automation-gateway/automation-gateway.db"
     automation_gateway_audit_db_file: "sqlite:////var/lib/automation-gateway/automation-gateway_audit.db"

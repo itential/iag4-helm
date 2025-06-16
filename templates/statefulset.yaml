@@ -41,6 +41,8 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
+          - name: automation_gateway_port
+            value: {{ .Values.applicationPort | quote }}
         {{- range $key, $value := .Values.applicationSettings.env }}
           - name: {{ $key }}
             value: {{ $value | quote }}
@@ -89,7 +91,16 @@ spec:
         volumeMounts:
           {{- if .Values.useTLS }}
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/certs/gateway
+            mountPath: /etc/ssl/certs/gateway/server.crt
+            subPath: tls.crt
+            readOnly: true
+          - name: gateway-cert-volume
+            mountPath: /etc/ssl/certs/gateway/server.key
+            subPath: tls.key
+            readOnly: true
+          - name: gateway-cert-volume
+            mountPath: /etc/ssl/certs/gateway/ca-bundle.crt
+            subPath: ca.crt
             readOnly: true
           {{- end }}
           # Uses a configmap to mount a customized ansible config file at the below path

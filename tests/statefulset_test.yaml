@@ -261,7 +261,7 @@ tests:
         tag: "1.0.0"
         pullPolicy: IfNotPresent
       service:
-        port: 8080
+        port: 443
       podSecurityContext: {}
       securityContext: {}
       startupProbe.enabled: true
@@ -271,7 +271,7 @@ tests:
           value: "/api/v2.0/poll"
       - equal:
           path: spec.template.spec.containers[0].startupProbe.httpGet.port
-          value: 8083
+          value: 8443
       - equal:
           path: spec.template.spec.containers[0].startupProbe.initialDelaySeconds
           value: 10
@@ -286,7 +286,7 @@ tests:
         tag: "1.0.0"
         pullPolicy: IfNotPresent
       service:
-        port: 8080
+        port: 443
       podSecurityContext: {}
       securityContext: {}
       livenessProbe.enabled: true
@@ -296,7 +296,7 @@ tests:
           value: "/api/v2.0/poll"
       - equal:
           path: spec.template.spec.containers[0].livenessProbe.httpGet.port
-          value: 8083
+          value: 8443
 
   - it: should configure readiness probe when provided
     set:
@@ -308,7 +308,7 @@ tests:
         tag: "1.0.0"
         pullPolicy: IfNotPresent
       service:
-        port: 8080
+        port: 443
       podSecurityContext: {}
       securityContext: {}
       readinessProbe.enabled: true
@@ -318,7 +318,7 @@ tests:
           value: /api/v2.0/poll
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.httpGet.port
-          value: 8083
+          value: 8443
 
   - it: should configure resources when provided
     set:
@@ -398,8 +398,23 @@ tests:
           path: spec.template.spec.containers[0].volumeMounts
           content:
             name: "gateway-cert-volume"
-            mountPath: "/etc/ssl/certs/gateway"
+            mountPath: "/etc/ssl/certs/gateway/server.crt"
             readOnly: true
+            subPath: tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "gateway-cert-volume"
+            mountPath: "/etc/ssl/certs/gateway/server.key"
+            readOnly: true
+            subPath: tls.key
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "gateway-cert-volume"
+            mountPath: "/etc/ssl/certs/gateway/ca-bundle.crt"
+            readOnly: true
+            subPath: ca.crt
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
@@ -679,6 +694,213 @@ tests:
           path: spec.template.spec.containers[0].livenessProbe
       - isNull:
           path: spec.template.spec.containers[0].readinessProbe
+
+  - it: should configure all expected environment variables
+    set:
+      statefulset.enabled: true
+      useTLS: true
+      replicas: 1
+    asserts:
+      # Test that the StatefulSet is created
+      - isKind:
+          of: StatefulSet
+
+      # Test each environment variable individually
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_ansible_debug
+            value: "false"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_ansible_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_audit_db_file
+            value: "sqlite:////var/lib/automation-gateway/automation-gateway_audit.db"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_bind_address
+            value: "0.0.0.0"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_data_file
+            value: "sqlite:////var/lib/automation-gateway/automation-gateway.db"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_exec_history_db_file
+            value: "sqlite:////var/lib/automation-gateway/automation-gateway_exec_history.db"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_git_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_global_log_directory
+            value: "/var/lib/automation-gateway"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_grpc_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_http_requests_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_http_server_threads
+            value: "8"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_ldap_auth_enabled
+            value: "false"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_logging_level
+            value: "INFO"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_netconf_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_netmiko_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_nornir_config_file
+            value: "/usr/share/automation-gateway/nornir/config.yml"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_nornir_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_nornir_module_path
+            value: "/usr/share/automation-gateway/nornir/modules"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_nornir_module_recursive
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_port
+            value: "8443"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_python_venv_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_python_venv_paths
+            value: "/usr/share/automation-gateway/venvs"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_script_path
+            value: "/usr/share/automation-gateway/scripts"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_script_recursive
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_scripts_enabled
+            value: "true"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_server_cabundle
+            value: "/etc/ssl/certs/gateway/ca-bundle.crt"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_server_certfile
+            value: "/etc/ssl/certs/gateway/server.crt"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_server_keyfile
+            value: "/etc/ssl/certs/gateway/server.key"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_terraform_enabled
+            value: "false"
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_vault_enabled
+            value: "false"
+
+  # This ensures that we have "true" or "false" and NOT true or false
+  - it: should have boolean-like environment variables as strings
+    set:
+      statefulset.enabled: true
+      useTLS: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      # Verify boolean values are properly quoted as strings
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "true"
 
   # - it: should not include resources when not configured
   #   set:
