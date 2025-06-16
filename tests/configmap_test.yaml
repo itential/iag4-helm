@@ -63,7 +63,6 @@ tests:
   - it: should configure port correctly
     set:
       configMap.enabled: true
-      configMap.propertiesYaml.port: 9090
       configMap.propertiesYaml.bindAddress: "0.0.0.0"
       configMap.propertiesYaml.serverThreads: 4
       configMap.propertiesYaml.logDir: "/var/log/automation-gateway"
@@ -82,7 +81,7 @@ tests:
     asserts:
       - matchRegex:
           path: data["properties.yml"]
-          pattern: "port: 9090"
+          pattern: "port: 8083"
 
   - it: should configure bind address correctly
     set:

@@ -31,7 +31,7 @@ data:
 
     # The port on which Automation Gateway server will listen for requests.
     # Mutually exclusive with bind_list
-    port: {{ .Values.configMap.propertiesYaml.port }}
+    port: {{ .Values.applicationPort }}
 
     # The gunicorn bind_address string..
     # For ipv4 only use "0.0.0.0", for ipv6 and ipv4 use "[::]"
@@ -47,7 +47,7 @@ data:
     # List of addresses and ports to bind to.
     # This setting will override both 'port' and 'bind_address'
     #bind_list:
-    #  - "{{ .Values.configMap.propertiesYaml.bindAddress }}:{{ .Values.configMap.propertiesYaml.port }}"
+    #  - "{{ .Values.configMap.propertiesYaml.bindAddress }}:{{ .Values.applicationPort }}"
 
     # Base of url for external proxy, used for generating redirects:
     # external_address: 'http://automation-gateway.example.com:8080'
@@ -95,26 +95,28 @@ data:
     #          variable from your host's variables "commands", etc.
     strict_args: true
 
+    {{- if .Values.useTLS }}
     ################
     # SSL Settings #
     ################
 
     # To start the server using SSL/TLS please fill out the following properties.
-    # server_certfile: ""
+    server_certfile: "/etc/ssl/gateway/tls.crt"
 
     # Note: gunicorn does not currently support encrypted key files.
-    # server_keyfile: ""
+    server_keyfile: "/etc/ssl/gateway/tls.key"
 
-    # server_cabundle: ""
+    server_cabundle: "/etc/ssl/gateway/ca.crt"
 
     # TLSv1_2
-    # server_ssl_version: "TLSv1_2"
+    server_ssl_version: "TLSv1_2"
 
     # You may also set custom SSL Ciphers.
     #
     # https://docs.gunicorn.org/en/20.x/settings.html#ciphers
     #
     # server_ssl_ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:...""
+    {{- end }}
 
     #############
     # Databases #
