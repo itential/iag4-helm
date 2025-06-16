@@ -40,6 +40,11 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        {{- range $key, $value := .Values.applicationSettings.env }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+        {{- end }}
         ports:
           - name: http
             containerPort: {{ .Values.service.port }}
@@ -82,13 +87,9 @@ spec:
         resources:  {{- toYaml .Values.resources | nindent 10 }}
         {{- end }}
         volumeMounts:
-          # Uses a configmap to mount a config file at the below path
-          - name: "config-volume"
-            mountPath: "/etc/automation-gateway/properties.yml"
-            subPath: "properties.yml"
           {{- if .Values.useTLS }}
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/gateway
+            mountPath: /etc/ssl/certs/gateway
             readOnly: true
           {{- end }}
           # Uses a configmap to mount a customized ansible config file at the below path
@@ -109,16 +110,16 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       volumes:
-        # config-volume is a configmap that contains files that are required by the IAG
-        # application and can be customized.
-        - name: "config-volume"
-          configMap:
-            name: "iag-config-map"
         {{- if .Values.useTLS }}
         - name: gateway-cert-volume
           secret:
             secretName: {{ include "iag.fullname" . }}-tls-secret
         {{- end }}
+        # config-volume is a configmap that contains files that are required by the IAG
+        # application and can be customized.
+        - name: "config-volume"
+          configMap:
+            name: "iag-config-map"
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
