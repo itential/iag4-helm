@@ -101,12 +101,12 @@ data:
     ################
 
     # To start the server using SSL/TLS please fill out the following properties.
-    server_certfile: "/etc/ssl/gateway/tls.crt"
+    server_certfile: "/etc/ssl/certs/gateway/server.crt"
 
     # Note: gunicorn does not currently support encrypted key files.
-    server_keyfile: "/etc/ssl/gateway/tls.key"
+    server_keyfile: "/etc/ssl/certs/gateway/server.key"
 
-    server_cabundle: "/etc/ssl/gateway/ca.crt"
+    server_cabundle: "/etc/ssl/certs/gateway/ca-bundle.crt"
 
     # TLSv1_2
     server_ssl_version: "TLSv1_2"

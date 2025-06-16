@@ -5,8 +5,8 @@
 
 replicaCount: 1
 
-applicationPort: 8083
-useTLS: false
+applicationPort: 8443
+useTLS: true
 
 # image The Itential image to use, its version, and its location
 image:
@@ -67,7 +67,7 @@ service:
   # name The name of this Kubernetes service object
   name: "iag-service"
   # port The port that this service object is listening on
-  port: 80
+  port: 443
 
 # ingress The Kubernetes ingress object for this application.
 ingress:

@@ -60,24 +60,24 @@ tests:
           value: 443
       - equal:
           path: spec.ports[0].targetPort
-          value: 8083
+          value: 8443
 
   - it: should configure NodePort service
     set:
       service:
         name: nodeport-service
         type: NodePort
-        port: 80
+        port: 443
     asserts:
       - equal:
           path: spec.type
           value: NodePort
       - equal:
           path: spec.ports[0].port
-          value: 80
+          value: 443
       - equal:
           path: spec.ports[0].targetPort
-          value: 8083
+          value: 8443
 
   - it: should configure LoadBalancer service
     set:
@@ -94,7 +94,7 @@ tests:
           value: 443
       - equal:
           path: spec.ports[0].targetPort
-          value: 8083
+          value: 8443
 
   - it: should set correct port configuration
     set:
@@ -114,7 +114,7 @@ tests:
           value: 9000
       - equal:
           path: spec.ports[0].targetPort
-          value: 8083
+          value: 8443
       - equal:
           path: spec.ports[0].protocol
           value: TCP
@@ -124,11 +124,11 @@ tests:
       service:
         name: test-service
         type: ClusterIP
-        port: 80
+        port: 443
     asserts:
       - equal:
           path: spec.ports[0].targetPort
-          value: 8083
+          value: 8443
 
   - it: should include selector labels
     set:
