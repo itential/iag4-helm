@@ -88,9 +88,6 @@ ingress:
           pathType: "Prefix"
   tls: []
 
-certificates:
-  enabled: true
-
 statefulset:
   enabled: true
 
