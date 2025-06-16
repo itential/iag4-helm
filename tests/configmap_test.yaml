@@ -81,7 +81,7 @@ tests:
     asserts:
       - matchRegex:
           path: data["properties.yml"]
-          pattern: "port: 8083"
+          pattern: "port: 8443"
 
   - it: should configure bind address correctly
     set:

@@ -88,7 +88,16 @@ spec:
             subPath: "properties.yml"
           {{- if .Values.useTLS }}
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/gateway
+            mountPath: /etc/ssl/certs/gateway/server.crt
+            subPath: tls.crt
+            readOnly: true
+          - name: gateway-cert-volume
+            mountPath: /etc/ssl/certs/gateway/server.key
+            subPath: tls.key
+            readOnly: true
+          - name: gateway-cert-volume
+            mountPath: /etc/ssl/certs/gateway/ca-bundle.crt
+            subPath: ca.crt
             readOnly: true
           {{- end }}
           # Uses a configmap to mount a customized ansible config file at the below path
