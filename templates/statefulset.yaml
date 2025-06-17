@@ -39,16 +39,20 @@ spec:
         command:
           - "automation-gateway"
           - "--sync-config"
+        # args:
+        #   - "--sync-config"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.applicationSettings.enabled }}
         env:
           - name: automation_gateway_port
             value: {{ .Values.applicationPort | quote }}
         {{- range $key, $value := .Values.applicationSettings.env }}
           - name: {{ $key }}
             value: {{ $value | quote }}
+        {{- end }}
         {{- end }}
         ports:
           - name: http
@@ -106,10 +110,15 @@ spec:
             subPath: ca.crt
             readOnly: true
           {{- end }}
+          {{- if .Values.configMap.enabled }}
           # Uses a configmap to mount a customized ansible config file at the below path
           - name: "config-volume"
             mountPath: "/etc/ansible/ansible.cfg"
             subPath: "ansible.cfg"
+          - name: "config-volume"
+            mountPath: "/etc/automation-gateway/properties.yml"
+            subPath: "properties.yml"
+          {{- end }}
           {{- if .Values.persistentVolumeClaims.enabled }}
           # Uses a persistent volume claim to mount a directory where the IAG sqlite database
           # files and log files are stored. Must be unique per container
@@ -129,11 +138,13 @@ spec:
           secret:
             secretName: {{ include "iag.fullname" . }}-tls-secret
         {{- end }}
+        {{- if .Values.configMap.enabled }}
         # config-volume is a configmap that contains files that are required by the IAG
         # application and can be customized.
         - name: "config-volume"
           configMap:
             name: "iag-config-map"
+        {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
