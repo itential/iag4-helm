@@ -152,24 +152,7 @@ startupProbe:
 # application will use. These properties are all passed into the configmap
 # which is then mounted as a file and read by the application.
 configMap:
-  enabled: false
-  propertiesYaml:
-    port: 8443
-    bindAddress: "0.0.0.0"
-    serverThreads: 8
-    logDir: "/var/lib/automation-gateway"
-    dataDir: "/var/lib/automation-gateway"
-    enableAnsible: true
-    ansibleDebug: false
-    customDir: "/usr/share/automation-gateway"
-    enableHttp: false
-    enableNetconf: true
-    enableNetmiko: false
-    enableNornir: false
-    enableScripts: true
-    enablePythonVenvs: true
-    enableGrpc: false
-    enableGit: true
+  enabled: true
 
 # volumes Additional volumes on the output Deployment definition.
 volumes: []
