@@ -39,8 +39,6 @@ spec:
         command:
           - "automation-gateway"
           - "--sync-config"
-        # args:
-        #   - "--sync-config"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -115,9 +113,6 @@ spec:
           - name: "config-volume"
             mountPath: "/etc/ansible/ansible.cfg"
             subPath: "ansible.cfg"
-          - name: "config-volume"
-            mountPath: "/etc/automation-gateway/properties.yml"
-            subPath: "properties.yml"
           {{- end }}
           {{- if .Values.persistentVolumeClaims.enabled }}
           # Uses a persistent volume claim to mount a directory where the IAG sqlite database
