@@ -1,0 +1,197 @@
+suite: test issuer template
+templates:
+  - issuer.yaml
+tests:
+  - it: should create an Issuer when enabled
+    set:
+      issuer:
+        enabled: true
+        name: "my-ca-issuer"
+        caSecretName: "ca-secret"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Issuer
+      - isAPIVersion:
+          of: cert-manager.io/v1
+
+  - it: should not create an Issuer when disabled
+    set:
+      issuer:
+        enabled: false
+        name: "my-ca-issuer"
+        caSecretName: "ca-secret"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have correct metadata name
+    set:
+      issuer:
+        enabled: true
+        name: "test-issuer"
+        caSecretName: "ca-secret"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "test-issuer"
+
+  - it: should have correct CA secret name in spec
+    set:
+      issuer:
+        enabled: true
+        name: "my-ca-issuer"
+        caSecretName: "my-ca-secret"
+    asserts:
+      - equal:
+          path: spec.ca.secretName
+          value: "my-ca-secret"
+
+  - it: should include proper labels
+    set:
+      issuer:
+        enabled: true
+        name: "my-ca-issuer"
+        caSecretName: "ca-secret"
+      # Mock chart values that would be used by iag.labels helper
+      nameOverride: ""
+      fullnameOverride: ""
+    asserts:
+      - exists:
+          path: metadata.labels
+      # Test for common Helm labels (adjust based on your iag.labels template)
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+
+  - it: should have correct spec structure
+    set:
+      issuer:
+        enabled: true
+        name: "my-ca-issuer"
+        caSecretName: "ca-secret"
+    asserts:
+      - exists:
+          path: spec
+      - exists:
+          path: spec.ca
+      - exists:
+          path: spec.ca.secretName
+      - isKind:
+          path: spec.ca
+          of: Issuer
+
+  - it: should handle different issuer names
+    set:
+      issuer:
+        enabled: true
+        name: "production-ca-issuer"
+        caSecretName: "prod-ca-secret"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "production-ca-issuer"
+      - equal:
+          path: spec.ca.secretName
+          value: "prod-ca-secret"
+
+  - it: should handle special characters in names
+    set:
+      issuer:
+        enabled: true
+        name: "my-ca-issuer-v2"
+        caSecretName: "my-ca-secret-2024"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "my-ca-issuer-v2"
+      - equal:
+          path: spec.ca.secretName
+          value: "my-ca-secret-2024"
+
+  - it: should not create document when issuer values are missing
+    set:
+      issuer:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # - it: should validate required fields are present
+  #   set:
+  #     issuer:
+  #       enabled: true
+  #       name: "test-issuer"
+  #       caSecretName: "test-ca-secret"
+  #   asserts:
+  #     - isNotEmpty:
+  #         path: metadata.name
+  #     - isNotEmpty:
+  #         path: spec.ca.secretName
+  #     - isString:
+  #         path: metadata.name
+  #     - isString:
+  #         path: spec.ca.secretName
+
+  - it: should have only CA issuer type configured
+    set:
+      issuer:
+        enabled: true
+        name: "ca-issuer"
+        caSecretName: "ca-secret"
+    asserts:
+      - exists:
+          path: spec.ca
+      # Ensure no other issuer types are configured
+      - notExists:
+          path: spec.acme
+      - notExists:
+          path: spec.vault
+      - notExists:
+          path: spec.selfSigned
+
+  - it: should work with minimal configuration
+    set:
+      issuer:
+        enabled: true
+        name: "min-issuer"
+        caSecretName: "min-secret"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Issuer
+      - equal:
+          path: metadata.name
+          value: "min-issuer"
+      - equal:
+          path: spec.ca.secretName
+          value: "min-secret"
+
+  - it: should validate required fields
+    set:
+      issuer:
+        enabled: true
+        name: ""
+        caSecretName: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: "issuer.name is required when issuer is enabled"
+
+  - it: should work with valid non-empty values
+    set:
+      issuer:
+        enabled: true
+        name: "valid-issuer"
+        caSecretName: "valid-secret"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isNotEmpty:
+          path: metadata.name
+      - isNotEmpty:
+          path: spec.ca.secretName

@@ -1,0 +1,329 @@
+suite: test certificate template
+templates:
+  - certificate.yaml
+tests:
+  - it: should create a Certificate when enabled
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+      # Mock values for helper functions
+      nameOverride: ""
+      fullnameOverride: ""
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Certificate
+      - isAPIVersion:
+          of: cert-manager.io/v1
+
+  - it: should not create a Certificate when disabled
+    set:
+      certificate:
+        enabled: false
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should have correct metadata name with fullname template
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+      nameOverride: "custom-name"
+    release:
+      name: "test-release"
+    chart:
+      name: "iag"
+    asserts:
+      - matchRegex:
+          path: metadata.name
+          pattern: ".*-tls$"
+
+  - it: should have correct secret name with fullname template
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+      nameOverride: "custom-name"
+    release:
+      name: "test-release"
+    chart:
+      name: "iag"
+    asserts:
+      - matchRegex:
+          path: spec.secretName
+          pattern: ".*-tls-secret$"
+
+  - it: should have correct issuer reference
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "production-ca-issuer"
+          kind: "ClusterIssuer"
+        hostname: "prod.example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - equal:
+          path: spec.issuerRef.name
+          value: "production-ca-issuer"
+      - equal:
+          path: spec.issuerRef.kind
+          value: "ClusterIssuer"
+      - exists:
+          path: spec.issuerRef
+
+  - it: should have correct hostname configuration
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "api.myapp.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - equal:
+          path: spec.commonName
+          value: "api.myapp.com"
+      - contains:
+          path: spec.dnsNames
+          content: "api.myapp.com"
+      - lengthEqual:
+          path: spec.dnsNames
+          count: 1
+
+  - it: should have correct renewal and duration settings
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "720h"
+        duration: "8760h"
+    asserts:
+      - equal:
+          path: spec.renewBefore
+          value: "720h"
+      - equal:
+          path: spec.duration
+          value: "8760h"
+
+  - it: should include proper labels
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+      nameOverride: ""
+      fullnameOverride: ""
+    asserts:
+      - exists:
+          path: metadata.labels
+      - exists:
+          path: metadata.labels["app.kubernetes.io/name"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/instance"]
+      - exists:
+          path: metadata.labels["app.kubernetes.io/managed-by"]
+
+  - it: should have complete spec structure
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - exists:
+          path: spec
+      - exists:
+          path: spec.secretName
+      - exists:
+          path: spec.issuerRef
+      - exists:
+          path: spec.commonName
+      - exists:
+          path: spec.dnsNames
+      - exists:
+          path: spec.renewBefore
+      - exists:
+          path: spec.duration
+
+  - it: should work with Issuer kind
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "namespace-issuer"
+          kind: "Issuer"
+        hostname: "test.example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - equal:
+          path: spec.issuerRef.kind
+          value: "Issuer"
+      - equal:
+          path: spec.issuerRef.name
+          value: "namespace-issuer"
+
+  - it: should work with ClusterIssuer kind
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "cluster-wide-issuer"
+          kind: "ClusterIssuer"
+        hostname: "cluster.example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - equal:
+          path: spec.issuerRef.kind
+          value: "ClusterIssuer"
+      - equal:
+          path: spec.issuerRef.name
+          value: "cluster-wide-issuer"
+
+  - it: should handle different hostname formats
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "sub.domain.example.com"
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - equal:
+          path: spec.commonName
+          value: "sub.domain.example.com"
+      - equal:
+          path: spec.dnsNames[0]
+          value: "sub.domain.example.com"
+
+  # - it: should validate all fields are strings
+  #   set:
+  #     certificate:
+  #       enabled: true
+  #       issuerRef:
+  #         name: "my-ca-issuer"
+  #         kind: "Issuer"
+  #       hostname: "example.com"
+  #       renewBefore: "240h"
+  #       duration: "2160h"
+  #   asserts:
+  #     - isString:
+  #         path: spec.secretName
+  #     - isString:
+  #         path: spec.issuerRef.name
+  #     - isString:
+  #         path: spec.issuerRef.kind
+  #     - isString:
+  #         path: spec.commonName
+  #     - isString:
+  #         path: spec.renewBefore
+  #     - isString:
+  #         path: spec.duration
+
+  - it: should handle minimal valid configuration
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "issuer"
+          kind: "Issuer"
+        hostname: "app.com"
+        renewBefore: "24h"
+        duration: "168h"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Certificate
+      - equal:
+          path: spec.commonName
+          value: "app.com"
+
+  - it: should work with different time formats
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: "example.com"
+        renewBefore: "30d"
+        duration: "90d"
+    asserts:
+      - equal:
+          path: spec.renewBefore
+          value: "30d"
+      - equal:
+          path: spec.duration
+          value: "90d"
+
+  # Error handling tests
+  - it: should not render when certificate values are missing
+    set:
+      certificate:
+        enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should handle empty hostname gracefully
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: ""
+        renewBefore: "240h"
+        duration: "2160h"
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: spec.commonName
+          value: ""
+      - equal:
+          path: spec.dnsNames[0]
+          value: ""

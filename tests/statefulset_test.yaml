@@ -374,8 +374,47 @@ tests:
           path: spec.template.spec.containers[0].volumeMounts
           content:
             name: "config-volume"
-            mountPath: "/etc/automation-gateway/properties.yml"
-            subPath: "properties.yml"
+            mountPath: "/etc/ansible/ansible.cfg"
+            subPath: "ansible.cfg"
+
+  - it: should configure appropriately when TLS is enabled
+    set:
+      useTLS: true
+      statefulset:
+        enabled: true
+      replicaCount: 1
+      image:
+        repository: itential/iag
+        tag: "1.0.0"
+        pullPolicy: IfNotPresent
+      service:
+        port: 8080
+      podSecurityContext: {}
+      securityContext: {}
+      persistentVolumeClaims:
+        enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "gateway-cert-volume"
+            mountPath: "/etc/ssl/certs/gateway/server.crt"
+            readOnly: true
+            subPath: tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "gateway-cert-volume"
+            mountPath: "/etc/ssl/certs/gateway/server.key"
+            readOnly: true
+            subPath: tls.key
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: "gateway-cert-volume"
+            mountPath: "/etc/ssl/certs/gateway/ca-bundle.crt"
+            readOnly: true
+            subPath: ca.crt
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
@@ -460,9 +499,9 @@ tests:
       - contains:
           path: spec.template.spec.volumes
           content:
-            name: "config-volume"
-            configMap:
-              name: "iag-config-map"
+            name: "gateway-cert-volume"
+            secret:
+              secretName: RELEASE-NAME-iag-tls-secret
 
   - it: should configure additional volumes
     set:
@@ -655,6 +694,59 @@ tests:
           path: spec.template.spec.containers[0].livenessProbe
       - isNull:
           path: spec.template.spec.containers[0].readinessProbe
+
+  - it: should configure all expected environment variables
+    set:
+      statefulset.enabled: true
+      useTLS: true
+      replicas: 1
+    asserts:
+      # Test that the StatefulSet is created
+      - isKind:
+          of: StatefulSet
+
+      # Check that the container has env vars
+      - exists:
+          path: spec.template.spec.containers[0].env
+
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: automation_gateway_port
+            value: "8443"
+
+  # This ensures that we have "true" or "false" and NOT true or false
+  - it: should have boolean-like environment variables as strings
+    set:
+      statefulset.enabled: true
+      useTLS: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+      # Verify boolean values are properly quoted as strings
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].value
+          value: "true"
+
+  - it: should have the correct container command
+    set:
+      statefulset.enabled: true
+      useTLS: true
+    asserts:
+      - isKind:
+          of: StatefulSet
+
+      - exists:
+          path: spec.template.spec.containers[0].command
+
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - "automation-gateway"
+            - "--sync-config"
 
   # - it: should not include resources when not configured
   #   set:
