@@ -12,3 +12,17 @@ data:
     [defaults]
     collections_path=/usr/local/lib/python3.9/site-packages/ansible/collections:/usr/share/ansible/collections
 {{- end -}}
+---
+{{- if .Files.Glob "files/ssh_config" }}
+# Copyright (c) 2025, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+# Source: iap/templates/configmap.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ssh-config-map
+data:
+  ssh_config: |
+{{ .Files.Get "files/ssh_config" | indent 4 }}
+{{- end }}
