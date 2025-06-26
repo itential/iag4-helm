@@ -17,3 +17,13 @@ version: 1.0.0
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "4.3.4"
+
+dependencies:
+  - name: cert-manager
+    version: "1.12.3"
+    repository: "https://charts.jetstack.io"
+    condition: certManager.enabled
+  - name: external-dns
+    version: "1.17.0"
+    repository: "https://kubernetes-sigs.github.io/external-dns/"
+    condition: externalDns.enabled
