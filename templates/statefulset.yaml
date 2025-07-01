@@ -124,6 +124,13 @@ spec:
           - name: "iag-code-volume"
             mountPath: "/usr/share/automation-gateway"
           {{- end }}
+          {{- if .Files.Glob "files/ssh_config" }}
+          # Uses a configmap to mount a customized SSH client config file at the below path
+          - name: "ssh-volume"
+            mountPath: "/etc/ssh/ssh_config"
+            subPath: "ssh_config"
+            readOnly: true
+          {{- end }}
         {{- with .Values.volumeMounts }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -139,6 +146,11 @@ spec:
         - name: "config-volume"
           configMap:
             name: "iag-config-map"
+        {{- end }}
+        {{- if .Files.Glob "files/ssh_config" }}
+        - name: "ssh-volume"
+          configMap:
+            name: "ssh-config-map"
         {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}

@@ -38,6 +38,9 @@ of this chart. To check if this is already installed run this command:
 ```bash
 kubectl get crds | grep cert-manager
 ```
+#### SSH config
+If there is any custom ssh client configuration needed, create the ssh_config file and place it in ```files/ssh_config```. The chart will place it in ```/etc/ssh/ssh_config```
+
 
 #### DNS
 
