@@ -1,0 +1,16 @@
+---
+{{- if .Files.Glob "files/ssh_config" }}
+# Copyright (c) 2024, Itential, Inc
+# GNU General Public License v3.0+ (see LICENSE or 
+# https://www.gnu.org/licenses/gpl-3.0.txt)
+# Source: iag/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ssh-config-map
+  labels:
+    {{- include "iag.labels" . | nindent 4 }}
+data:
+  ssh_config: |
+{{ .Files.Get "files/ssh_config" | indent 4 }}
+{{- end }}

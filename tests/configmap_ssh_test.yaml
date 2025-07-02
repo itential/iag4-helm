@@ -1,0 +1,47 @@
+suite: test ssh configmap
+templates:
+  - configmap_ssh.yaml
+tests:
+  - it: should create ConfigMap with correct metadata
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - isAPIVersion:
+          of: v1
+      - equal:
+          path: metadata.name
+          value: ssh-config-map
+
+  - it: should include helm labels
+    asserts:
+      - exists:
+          path: metadata.labels
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/managed-by: Helm
+
+  - it: should have ssh_config data key
+    asserts:
+      - exists:
+          path: data.ssh_config
+      - isNotEmpty:
+          path: data.ssh_config
+
+  - it: should render with custom values
+    set:
+      nameOverride: "custom-app"
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: custom-app
+
+  - it: should work with different release names
+    release:
+      name: "test-release"
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/instance: test-release
