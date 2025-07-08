@@ -21,23 +21,6 @@ tests:
           content:
             app.kubernetes.io/managed-by: Helm
   
-  # - it: should have ssh_config data key when file exists
-  #   files:
-  #     - files/ssh_config: |
-  #         Host *
-  #             StrictHostKeyChecking no
-  #   asserts:
-  #     - exists:
-  #         path: data.ssh_config
-  #     - isNotEmpty:
-  #         path: data.ssh_config
-  
-  # - it: should not have ssh_config data key when file does not exist
-  #   # No files provided
-  #   asserts:
-  #     - isNull:
-  #         path: data.ssh_config
-  
   - it: should render with custom values
     set:
       nameOverride: "custom-app"
