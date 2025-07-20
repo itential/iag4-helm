@@ -167,6 +167,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: id-rsa-perms
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/bin/sh", "-c", "find /usr/share/automation-gateway/ssh -name id_rsa -exec chmod 0400 {} \\;"]
+          volumeMounts:
+            - name: iag-code-volume
+              mountPath: /usr/share/automation-gateway
   {{- if .Values.persistentVolumeClaims.enabled }}
   volumeClaimTemplates:
     - metadata:
