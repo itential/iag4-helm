@@ -40,6 +40,8 @@ helm.sh/chart: {{ include "iag.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/part-of: "itential-gateway-4"
+app.kubernetes.io/layer: "application"
 {{- end }}
 
 {{/*
