@@ -8,9 +8,12 @@ metadata:
   name: {{ .Values.service.name }}
   labels:
     {{- include "iag.labels" . | nindent 4 }}
+    app.kubernetes.io/component: "service"
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
+    helm.sh/template-file: "{{ .Template.Name }}"
+    kubernetes.io/description: "Itential Automation Gateway service."
   {{- end }}
 spec:
   type: {{ .Values.service.type }}
