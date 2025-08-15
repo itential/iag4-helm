@@ -1,6 +1,8 @@
 suite: test configmap template
 templates:
   - configmap.yaml
+values:
+  - ../tests/test-values.yaml
 tests:
   - it: should not render configmap when disabled
     set:
