@@ -1,7 +1,4 @@
 {{- if .Values.storageClass.enabled -}}
-# Copyright (c) 2024, Itential, Inc
-# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
-# Source: iag/templates/storage-class.yaml
 ---
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
