@@ -1,6 +1,8 @@
 suite: test certificate template
 templates:
   - certificate.yaml
+values:
+  - ../tests/test-values.yaml
 tests:
   - it: should create a Certificate when enabled
     set:
@@ -50,8 +52,6 @@ tests:
       nameOverride: "custom-name"
     release:
       name: "test-release"
-    chart:
-      name: "iag"
     asserts:
       - matchRegex:
           path: metadata.name
@@ -70,8 +70,6 @@ tests:
       nameOverride: "custom-name"
     release:
       name: "test-release"
-    chart:
-      name: "iag"
     asserts:
       - matchRegex:
           path: spec.secretName

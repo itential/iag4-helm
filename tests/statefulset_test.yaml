@@ -1,6 +1,8 @@
 suite: test statefulset template
 templates:
   - statefulset.yaml
+values:
+  - ../tests/test-values.yaml
 tests:
   - it: should not render statefulset when disabled
     set:
