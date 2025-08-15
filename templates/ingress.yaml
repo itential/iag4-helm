@@ -13,11 +13,11 @@ metadata:
   labels:
     {{- include "iag.labels" . | nindent 4 }}
     app.kubernetes.io/component: "ingress"
-  {{- with .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-    helm.sh/template-file: "{{ $.Template.Name }}"
     kubernetes.io/description: "Itential Automation Gateway Ingress routes."
+    {{- include "iag.annotations" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}

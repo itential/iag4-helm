@@ -11,8 +11,8 @@ metadata:
     {{- include "iag.labels" . | nindent 4 }}
     app.kubernetes.io/component: "statefulset"
   annotations:
-    helm.sh/template-file: "{{ .Template.Name }}"
     kubernetes.io/description: "Itential Automation Gateway StatefulSet that executes the IAG container."
+    {{- include "iag.annotations" . | nindent 4 }}
 spec:
   serviceName: "iag-service"
   selector:

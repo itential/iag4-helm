@@ -750,19 +750,26 @@ tests:
             - "automation-gateway"
             - "--sync-config"
 
-  # - it: should not include resources when not configured
-  #   set:
-  #     statefulset:
-  #       enabled: true
-  #     replicaCount: 1
-  #     image:
-  #       repository: itential/iag
-  #       tag: "1.0.0"
-  #       pullPolicy: IfNotPresent
-  #     service:
-  #       port: 8080
-  #     podSecurityContext: {}
-  #     securityContext: {}
-  #   asserts:
-  #     - isNull:
-  #         path: spec.template.spec.containers[0].resources
+  - it: should have the expected standard annotations
+    set:
+      statefulset:
+        enabled: true
+        annotations: {}
+    asserts:
+      - exists:
+          path: metadata.annotations["itential.com/copyright"]
+      - exists:
+          path: metadata.annotations["itential.com/license"]
+      - exists:
+          path: metadata.annotations["helm.sh/template-file"]
+
+  - it: should allow for custom annotations
+    set:
+      statefulset:
+        enabled: true
+      podAnnotations:
+        foo: "bar"
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["foo"]
+          value: bar

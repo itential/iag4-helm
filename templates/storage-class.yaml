@@ -11,8 +11,11 @@ metadata:
     {{- include "iag.labels" . | nindent 4 }}
     app.kubernetes.io/component: "storageclass"
   annotations:
-    helm.sh/template-file: "{{ .Template.Name }}"
     kubernetes.io/description: "Itential Automation Gateway StorageClass for persistent volumes."
+    {{- include "iag.annotations" . | nindent 4 }}
+  {{- with .Values.storageClass.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 provisioner: {{ .Values.storageClass.provisioner }}
 parameters:
   {{- toYaml .Values.storageClass.parameters | nindent 2 }}

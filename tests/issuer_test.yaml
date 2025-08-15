@@ -197,3 +197,31 @@ tests:
           path: metadata.name
       - isNotEmpty:
           path: spec.ca.secretName
+
+  - it: should have the expected standard annotations
+    set:
+      issuer:
+        enabled: true
+        name: "valid-issuer"
+        caSecretName: "valid-secret"
+        annotations: {}
+    asserts:
+      - exists:
+          path: metadata.annotations["itential.com/copyright"]
+      - exists:
+          path: metadata.annotations["itential.com/license"]
+      - exists:
+          path: metadata.annotations["helm.sh/template-file"]
+
+  - it: should allow for custom annotations
+    set:
+      issuer:
+        enabled: true
+        name: "valid-issuer"
+        caSecretName: "valid-secret"
+        annotations:
+          foo: "bar"
+    asserts:
+      - equal:
+          path: metadata.annotations["foo"]
+          value: bar

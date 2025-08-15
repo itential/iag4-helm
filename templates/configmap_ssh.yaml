@@ -1,17 +1,21 @@
+{{- if .Values.configMap.enabled -}}
 ---
-# Copyright (c) 2025, Itential, Inc
-# GNU General Public License v3.0+ (see LICENSE or
-# https://www.gnu.org/licenses/gpl-3.0.txt)
-# Source: iag/templates/configmap_ssh.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ssh-config-map
   labels:
     {{- include "iag.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: "Itential Automation Gateway ConfigMap providing custom SSH config"
+    {{- include "iag.annotations" . | nindent 4 }}
+    {{- if .Values.configMap.annotations }}
+    {{- toYaml .Values.configMap.annotations | nindent 4 }}
+    {{- end }}
 data:
   {{- $sshConfig := .Files.Get "files/ssh_config" }}
   {{- if $sshConfig }}
   ssh_config: |
 {{ $sshConfig | indent 4 }}
   {{- end }}
+{{- end -}}

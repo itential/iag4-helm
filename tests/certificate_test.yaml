@@ -325,3 +325,39 @@ tests:
       - equal:
           path: spec.dnsNames[0]
           value: ""
+
+  - it: should have the expected standard annotations
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: ""
+        renewBefore: "240h"
+        duration: "2160h"
+        annotations: {}
+    asserts:
+      - exists:
+          path: metadata.annotations["itential.com/copyright"]
+      - exists:
+          path: metadata.annotations["itential.com/license"]
+      - exists:
+          path: metadata.annotations["helm.sh/template-file"]
+
+  - it: should allow for custom annotations
+    set:
+      certificate:
+        enabled: true
+        issuerRef:
+          name: "my-ca-issuer"
+          kind: "Issuer"
+        hostname: ""
+        renewBefore: "240h"
+        duration: "2160h"
+        annotations:
+          foo: "bar"
+    asserts:
+      - equal:
+          path: metadata.annotations["foo"]
+          value: bar

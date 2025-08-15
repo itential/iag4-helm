@@ -17,8 +17,11 @@ metadata:
     {{- include "iag.labels" . | nindent 4 }}
     app.kubernetes.io/component: "issuer"
   annotations:
-    helm.sh/template-file: "{{ .Template.Name }}"
     kubernetes.io/description: "Itential Automation Gateway TLS certificate issuer."
+    {{- include "iag.annotations" . | nindent 4 }}
+  {{- with .Values.issuer.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   ca:
     secretName: {{ .Values.issuer.caSecretName | quote }}

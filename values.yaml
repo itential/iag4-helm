@@ -9,7 +9,7 @@ applicationPort: 8443
 useTLS: true
 
 certManager:
-  enabled: true
+  enabled: false
 
 # Optional dependency to generate a static external DNS name
 external-dns:
