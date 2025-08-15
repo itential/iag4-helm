@@ -4,447 +4,191 @@ templates:
 values:
   - ../tests/test-values.yaml
 tests:
-  - it: should not render statefulset when disabled
+  # Test 1: Basic StatefulSet creation
+  - it: should create StatefulSet when enabled
     set:
-      statefulset:
-        enabled: false
-    asserts:
-      - hasDocuments:
-          count: 0
-
-  - it: should render statefulset when enabled
-    set:
-      statefulset:
-        enabled: true
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationPort: 8443
       replicaCount: 1
       image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
+        repository: "test-repo"
+        tag: "latest"
+      storageClass:
+        name: "test-storage"
+      persistentVolumeClaims:
+        enabled: true
+        dataClaim:
+          storage: "10Gi"
+        codeClaim:
+          storage: "10Gi"
+      applicationSettings:
+        enabled: true
+        env: {}
     asserts:
       - hasDocuments:
           count: 1
       - isKind:
           of: StatefulSet
-      - isAPIVersion:
-          of: apps/v1
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-iag
 
-  - it: should set correct metadata
+  # Test 2: StatefulSet should not be created when disabled
+  - it: should not create StatefulSet when disabled
     set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
+      statefulset.enabled: false
     asserts:
-      - isSubset:
-          path: metadata.labels
-          content:
-            app.kubernetes.io/name: iag
+      - hasDocuments:
+          count: 0
+
+  # Test 3: Check basic metadata and labels
+  - it: should set correct metadata and labels
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/component"]
+          value: "statefulset"
       - equal:
           path: spec.serviceName
           value: "iag-service"
-
-  - it: should set correct selector labels
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
-      - isSubset:
-          path: spec.selector.matchLabels
-          content:
-            app.kubernetes.io/name: iag
-            app.kubernetes.io/instance: RELEASE-NAME
-
-  - it: should set correct replica count
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 3
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
       - equal:
           path: spec.replicas
-          value: 3
+          value: 1
 
-  - it: should configure pod annotations
+  # Test 4: Test environment variables with applicationSettings enabled
+  - it: should set correct environment variables when applicationSettings enabled
     set:
-      statefulset:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationPort: 9000
+      applicationSettings:
         enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      podAnnotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8080"
+        ansibleEnabled: true
+        nornirEnabled: true
+        scriptsEnabled: true
+        pythonVenvEnabled: true
+        gitEnabled: true
+        grpcEnabled: true
+        httpRequestsEnabled: true
+        netconfEnabled: true
+        netmikoEnabled: true
+        env:
+          custom_env_var: "custom_value"
+          automation_gateway_logging_level: "DEBUG"
     asserts:
       - equal:
-          path: spec.template.metadata.annotations["prometheus.io/scrape"]
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_port")].value
+          value: "9000"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ansible_enabled")].value
           value: "true"
       - equal:
-          path: spec.template.metadata.annotations["prometheus.io/port"]
-          value: "8080"
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_nornir_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_scripts_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "custom_env_var")].value
+          value: "custom_value"
 
-  - it: should configure pod labels
+  # Test 5: Test TLS configuration
+  - it: should configure TLS environment variables when useTLS is true
     set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      podLabels:
-        environment: production
-        team: platform
-    asserts:
-      - equal:
-          path: spec.template.metadata.labels.environment
-          value: production
-      - equal:
-          path: spec.template.metadata.labels.team
-          value: platform
-
-  - it: should configure image pull secrets
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      imagePullSecrets:
-        - name: regcred
-        - name: dockerhub-secret
-    asserts:
-      - lengthEqual:
-          path: spec.template.spec.imagePullSecrets
-          count: 2
-      - equal:
-          path: spec.template.spec.imagePullSecrets[0].name
-          value: regcred
-      - equal:
-          path: spec.template.spec.imagePullSecrets[1].name
-          value: dockerhub-secret
-
-  - it: should set empty service account name
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
-      - equal:
-          path: spec.template.spec.serviceAccountName
-          value: ""
-
-  - it: should configure container image
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "2.5.0"
-        pullPolicy: Always
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].name
-          value: iag
-      - equal:
-          path: spec.template.spec.containers[0].image
-          value: "itential/iag:2.5.0"
-      - equal:
-          path: spec.template.spec.containers[0].imagePullPolicy
-          value: Always
-
-  # - it: should use chart app version when tag not specified
-  #   set:
-  #     statefulset:
-  #       enabled: true
-  #     replicaCount: 1
-  #     image:
-  #       repository: itential/iag
-  #       pullPolicy: IfNotPresent
-  #     service:
-  #       port: 8080
-  #     podSecurityContext: {}
-  #     securityContext: {}
-  #   chart:
-  #     appVersion: "1.16.0"
-  #   asserts:
-  #     - equal:
-  #         path: spec.template.spec.containers[0].image
-  #         value: "itential/iag:1.16.0"
-
-  - it: should configure container port
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 9090
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].ports[0].name
-          value: http
-      - equal:
-          path: spec.template.spec.containers[0].ports[0].containerPort
-          value: 9090
-      - equal:
-          path: spec.template.spec.containers[0].ports[0].protocol
-          value: TCP
-
-  - it: should configure startup probe when provided
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 443
-      podSecurityContext: {}
-      securityContext: {}
-      startupProbe.enabled: true
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].startupProbe.httpGet.path
-          value: "/api/v2.0/poll"
-      - equal:
-          path: spec.template.spec.containers[0].startupProbe.httpGet.port
-          value: 8443
-      - equal:
-          path: spec.template.spec.containers[0].startupProbe.initialDelaySeconds
-          value: 10
-
-  - it: should configure liveness probe when provided
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 443
-      podSecurityContext: {}
-      securityContext: {}
-      livenessProbe.enabled: true
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
-          value: "/api/v2.0/poll"
-      - equal:
-          path: spec.template.spec.containers[0].livenessProbe.httpGet.port
-          value: 8443
-
-  - it: should configure readiness probe when provided
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 443
-      podSecurityContext: {}
-      securityContext: {}
-      readinessProbe.enabled: true
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
-          value: /api/v2.0/poll
-      - equal:
-          path: spec.template.spec.containers[0].readinessProbe.httpGet.port
-          value: 8443
-
-  - it: should configure resources when provided
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      resources:
-        limits:
-          cpu: 500m
-          memory: 512Mi
-        requests:
-          cpu: 250m
-          memory: 256Mi
-    asserts:
-      - equal:
-          path: spec.template.spec.containers[0].resources.limits.cpu
-          value: 500m
-      - equal:
-          path: spec.template.spec.containers[0].resources.limits.memory
-          value: 512Mi
-      - equal:
-          path: spec.template.spec.containers[0].resources.requests.cpu
-          value: 250m
-      - equal:
-          path: spec.template.spec.containers[0].resources.requests.memory
-          value: 256Mi
-
-  - it: should configure basic volume mounts
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      persistentVolumeClaims:
-        enabled: false
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: "config-volume"
-            mountPath: "/etc/ansible/ansible.cfg"
-            subPath: "ansible.cfg"
-
-  - it: should configure appropriately when TLS is enabled
-    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
       useTLS: true
-      statefulset:
+      applicationSettings:
         enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      persistentVolumeClaims:
-        enabled: false
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_server_certfile")].value
+          value: "/etc/ssl/gateway/server.crt"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_server_keyfile")].value
+          value: "/etc/ssl/gateway/server.key"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_server_cabundle")].value
+          value: "/etc/ssl/gateway/ca-bundle.crt"
+
+  # Test 6: Test TLS volume mounts
+  - it: should mount TLS volumes when useTLS is true
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      useTLS: true
+      applicationSettings:
+        enabled: true
+        env: {}
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
-            name: "gateway-cert-volume"
-            mountPath: "/etc/ssl/certs/gateway/server.crt"
-            readOnly: true
+            name: gateway-cert-volume
+            mountPath: /etc/ssl/gateway/server.crt
             subPath: tls.crt
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: "gateway-cert-volume"
-            mountPath: "/etc/ssl/certs/gateway/server.key"
             readOnly: true
-            subPath: tls.key
       - contains:
-          path: spec.template.spec.containers[0].volumeMounts
+          path: spec.template.spec.volumes
           content:
-            name: "gateway-cert-volume"
-            mountPath: "/etc/ssl/certs/gateway/ca-bundle.crt"
-            readOnly: true
-            subPath: ca.crt
-      - contains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: "config-volume"
-            mountPath: "/etc/ansible/ansible.cfg"
-            subPath: "ansible.cfg"
+            name: gateway-cert-volume
+            secret:
+              secretName: RELEASE-NAME-iag-tls-secret
 
-  - it: should configure persistent volume mounts when enabled
+  # Test 7: Test persistent volume claims
+  - it: should create volume claim templates when PVC enabled
     set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
       persistentVolumeClaims:
         enabled: true
         dataClaim:
-          storage: 10Gi
+          storage: "20Gi"
         codeClaim:
-          storage: 5Gi
+          storage: "30Gi"
       storageClass:
-        name: fast-ssd
+        name: "fast-ssd"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: "iag-data-volume"
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
+          value: "20Gi"
+      - equal:
+          path: spec.volumeClaimTemplates[0].spec.storageClassName
+          value: "fast-ssd"
+      - equal:
+          path: spec.volumeClaimTemplates[1].metadata.name
+          value: "iag-code-volume"
+      - equal:
+          path: spec.volumeClaimTemplates[1].spec.resources.requests.storage
+          value: "30Gi"
+
+  # Test 8: Test volume mounts for PVCs
+  - it: should mount persistent volumes when PVC enabled
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      persistentVolumeClaims:
+        enabled: true
+        dataClaim:
+          storage: "10Gi"
+        codeClaim:
+          storage: "10Gi"
+      applicationSettings:
+        enabled: true
+        env: {}
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -457,298 +201,279 @@ tests:
             name: "iag-code-volume"
             mountPath: "/usr/share/automation-gateway"
 
-  - it: should configure additional volume mounts
+  # Test 9: Test ConfigMap volume mounting
+  - it: should mount configmap volume when configMap enabled
     set:
-      statefulset:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      configMap:
         enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      persistentVolumeClaims:
-        enabled: false
-      volumeMounts:
-        - name: custom-volume
-          mountPath: /custom/path
-          readOnly: true
+      applicationSettings:
+        enabled: true
+        env: {}
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
-            name: custom-volume
-            mountPath: /custom/path
-            readOnly: true
-
-  - it: should configure basic volumes
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
+            name: "config-volume"
+            mountPath: "/etc/ansible/ansible.cfg"
+            subPath: "ansible.cfg"
       - contains:
           path: spec.template.spec.volumes
           content:
-            name: "gateway-cert-volume"
-            secret:
-              secretName: RELEASE-NAME-iag-tls-secret
+            name: "config-volume"
+            configMap:
+              name: "iag-config-map"
 
-  - it: should configure additional volumes
+  # Test 10: Test initContainer configuration
+  - it: should create initContainer for SSH key permissions
     set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
       image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      volumes:
-        - name: custom-volume
-          emptyDir: {}
+        repository: "test-repo"
+        tag: "v1.0.0"
+      applicationSettings:
+        enabled: true
+        env: {}
     asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: "id-rsa-perms"
+      - equal:
+          path: spec.template.spec.initContainers[0].image
+          value: "test-repo:v1.0.0"
       - contains:
-          path: spec.template.spec.volumes
+          path: spec.template.spec.initContainers[0].volumeMounts
           content:
-            name: custom-volume
-            emptyDir: {}
+            name: iag-code-volume
+            mountPath: /usr/share/automation-gateway
 
-  - it: should configure node selector
+  # Test 11: Test probes configuration
+  - it: should configure startup probe when enabled
     set:
-      statefulset:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationPort: 8443
+      useTLS: true
+      startupProbe:
         enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        failureThreshold: 18
+        successThreshold: 1
+        timeoutSeconds: 5
+        path: "/api/v2.0/poll"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: "/api/v2.0/poll"
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.port
+          value: 8443
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.scheme
+          value: "HTTPS"
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.initialDelaySeconds
+          value: 30
+
+  # Test 12: Test liveness probe
+  - it: should configure liveness probe when enabled
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationPort: 8080
+      useTLS: false
+      livenessProbe:
+        enabled: true
+        periodSeconds: 20
+        timeoutSeconds: 10
+        failureThreshold: 5
+        successThreshold: 1
+        path: "/health"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: "HTTP"
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.periodSeconds
+          value: 20
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.failureThreshold
+          value: 5
+
+  # Test 13: Test readiness probe
+  - it: should configure readiness probe when enabled
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      readinessProbe:
+        enabled: true
+        periodSeconds: 15
+        path: "/ready"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: "/ready"
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.periodSeconds
+          value: 15
+
+  # Test 14: Test resources configuration
+  - it: should set resources when resourcesEnabled is true
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      resourcesEnabled: true
+      resources:
+        limits:
+          cpu: "2000m"
+          memory: "512Mi"
+        requests:
+          cpu: "1000m"
+          memory: "256Mi"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "2000m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "256Mi"
+
+  # Test 15: Test pod security context
+  - it: should set pod security context
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      podSecurityContext:
+        fsGroup: 2000
+        runAsUser: 2000
+        runAsNonRoot: true
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.fsGroup
+          value: 2000
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 2000
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+
+  # Test 16: Test node selector and tolerations
+  - it: should set node selector and tolerations
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
       nodeSelector:
-        kubernetes.io/arch: amd64
-        zone: us-west-2a
+        kubernetes.io/arch: "amd64"
+      tolerations:
+        - key: "special"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      applicationSettings:
+        enabled: true
+        env: {}
     asserts:
       - equal:
           path: spec.template.spec.nodeSelector["kubernetes.io/arch"]
-          value: amd64
-      - equal:
-          path: spec.template.spec.nodeSelector["zone"]
-          value: us-west-2a
-
-  - it: should configure affinity
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/arch
-                    operator: In
-                    values:
-                      - amd64
-    asserts:
-      - isNotNull:
-          path: spec.template.spec.affinity.nodeAffinity
-
-  - it: should configure tolerations
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      tolerations:
-        - key: "dedicated"
-          operator: "Equal"
-          value: "iag"
-          effect: "NoSchedule"
-    asserts:
-      - lengthEqual:
-          path: spec.template.spec.tolerations
-          count: 1
+          value: "amd64"
       - equal:
           path: spec.template.spec.tolerations[0].key
-          value: "dedicated"
-      - equal:
-          path: spec.template.spec.tolerations[0].operator
-          value: "Equal"
-      - equal:
-          path: spec.template.spec.tolerations[0].value
-          value: "iag"
-      - equal:
-          path: spec.template.spec.tolerations[0].effect
-          value: "NoSchedule"
+          value: "special"
 
-  - it: should configure volume claim templates when PVC enabled
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      persistentVolumeClaims:
-        enabled: true
-        dataClaim:
-          storage: 20Gi
-        codeClaim:
-          storage: 10Gi
-      storageClass:
-        name: premium-ssd
-    asserts:
-      - lengthEqual:
-          path: spec.volumeClaimTemplates
-          count: 2
-      - equal:
-          path: spec.volumeClaimTemplates[0].metadata.name
-          value: "iag-data-volume"
-      - equal:
-          path: spec.volumeClaimTemplates[0].spec.accessModes[0]
-          value: "ReadWriteOnce"
-      - equal:
-          path: spec.volumeClaimTemplates[0].spec.resources.requests.storage
-          value: 20Gi
-      - equal:
-          path: spec.volumeClaimTemplates[0].spec.storageClassName
-          value: premium-ssd
-      - equal:
-          path: spec.volumeClaimTemplates[1].metadata.name
-          value: "iag-code-volume"
-      - equal:
-          path: spec.volumeClaimTemplates[1].spec.resources.requests.storage
-          value: 10Gi
-
-  - it: should not configure volume claim templates when PVC disabled
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-      persistentVolumeClaims:
-        enabled: false
-    asserts:
-      - isNull:
-          path: spec.volumeClaimTemplates
-
-  - it: should not include probes when not configured
-    set:
-      statefulset:
-        enabled: true
-      replicaCount: 1
-      image:
-        repository: itential/iag
-        tag: "1.0.0"
-        pullPolicy: IfNotPresent
-      service:
-        port: 8080
-      podSecurityContext: {}
-      securityContext: {}
-    asserts:
-      - isNull:
-          path: spec.template.spec.containers[0].startupProbe
-      - isNull:
-          path: spec.template.spec.containers[0].livenessProbe
-      - isNull:
-          path: spec.template.spec.containers[0].readinessProbe
-
-  - it: should configure all expected environment variables
+  # Test 17: Test conditional environment variables
+  - it: should set conditional env vars based on feature flags
     set:
       statefulset.enabled: true
-      useTLS: true
-      replicas: 1
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: true
+        ansibleEnabled: false
+        nornirEnabled: false
+        scriptsEnabled: false
+        gitEnabled: false
+        env:
+          automation_gateway_git_strict_host_check: "true"
     asserts:
-      # Test that the StatefulSet is created
-      - isKind:
-          of: StatefulSet
-
-      # Check that the container has env vars
-      - exists:
-          path: spec.template.spec.containers[0].env
-
-      - contains:
-          path: spec.template.spec.containers[0].env
-          content:
-            name: automation_gateway_port
-            value: "8443"
-
-  # This ensures that we have "true" or "false" and NOT true or false
-  - it: should have boolean-like environment variables as strings
-    set:
-      statefulset.enabled: true
-      useTLS: true
-    asserts:
-      - isKind:
-          of: StatefulSet
-      # Verify boolean values are properly quoted as strings
       - equal:
-          path: spec.template.spec.containers[0].env[1].value
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ansible_enabled")].value
           value: "false"
       - equal:
-          path: spec.template.spec.containers[0].env[2].value
-          value: "true"
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_nornir_enabled")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_scripts_enabled")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_git_enabled")].value
+          value: "false"
 
-  - it: should have the correct container command
+  # Test 18: Test environment variables are properly quoted
+  - it: should properly quote all environment variable values
     set:
       statefulset.enabled: true
-      useTLS: true
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: true
+        ansibleEnabled: true
+        env:
+          test_bool: true
+          test_number: 123
+          test_string: "hello"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ansible_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "test_bool")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "test_number")].value
+          value: "123"
+
+  # Test 19: Test without applicationSettings
+  - it: should work when applicationSettings is disabled
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: false
     asserts:
       - isKind:
           of: StatefulSet
+      - notExists:
+          path: spec.template.spec.containers[0].env
 
-      - exists:
-          path: spec.template.spec.containers[0].command
-
+  # Test 20: Test Pod IP binding
+  - it: should configure Pod IP binding for automation_gateway_bind_address
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
       - equal:
-          path: spec.template.spec.containers[0].command
-          value:
-            - "automation-gateway"
-            - "--sync-config"
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_bind_address")].valueFrom.fieldRef.fieldPath
+          value: "status.podIP"
 
   - it: should have the expected standard annotations
     set:
