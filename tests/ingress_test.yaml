@@ -297,7 +297,7 @@ tests:
           path: spec.rules[0].http.paths[0].pathType
           value: Prefix
 
-  - it: should handle missing annotations gracefully
+  - it: should have the expected standard annotations
     set:
       ingress:
         enabled: true
@@ -308,9 +308,35 @@ tests:
             paths:
               - path: /
                 pathType: Prefix
+        annotations: {}
       service:
         name: test-service
         port: 80
     asserts:
-      - isNull:
-          path: metadata.annotations
+      - exists:
+          path: metadata.annotations["itential.com/copyright"]
+      - exists:
+          path: metadata.annotations["itential.com/license"]
+      - exists:
+          path: metadata.annotations["helm.sh/template-file"]
+
+  - it: should allow for custom annotations
+    set:
+      ingress:
+        enabled: true
+        name: test-ingress
+        className: nginx
+        hosts:
+          - host: example.com
+            paths:
+              - path: /
+                pathType: Prefix
+        annotations:
+          foo: "bar"
+      service:
+        name: test-service
+        port: 80
+    asserts:
+      - equal:
+          path: metadata.annotations["foo"]
+          value: bar

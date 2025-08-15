@@ -357,3 +357,44 @@ tests:
       - equal:
           path: parameters.encrypted
           value: "true"
+
+  - it: should have the expected standard annotations
+    set:
+      storageClass:
+        enabled: true
+        name: mixed-params-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+          iops: "3000"
+          throughput: "125"
+          encrypted: "true"
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+    asserts:
+      - exists:
+          path: metadata.annotations["itential.com/copyright"]
+      - exists:
+          path: metadata.annotations["itential.com/license"]
+      - exists:
+          path: metadata.annotations["helm.sh/template-file"]
+
+  - it: should allow for custom annotations
+    set:
+      storageClass:
+        enabled: true
+        name: mixed-params-storage
+        provisioner: kubernetes.io/aws-ebs
+        parameters:
+          type: gp3
+          iops: "3000"
+          throughput: "125"
+          encrypted: "true"
+        reclaimPolicy: Delete
+        volumeBindingMode: Immediate
+        annotations:
+          foo: "bar"
+    asserts:
+      - equal:
+          path: metadata.annotations["foo"]
+          value: bar
