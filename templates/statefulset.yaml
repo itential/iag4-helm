@@ -171,7 +171,16 @@ spec:
       initContainers:
         - name: id-rsa-perms
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["/bin/sh", "-c", "find /usr/share/automation-gateway/ssh -name id_rsa -exec chmod 0400 {} \\;"]
+          command:
+            - /bin/sh
+            - -c
+            - |
+              if [ -f /usr/share/automation-gateway/ssh/id_rsa ]; then
+                chmod 0400 /usr/share/automation-gateway/ssh/id_rsa
+                echo "Set permissions on id_rsa"
+              else
+                echo "id_rsa not found, skipping"
+              fi
           volumeMounts:
             - name: iag-code-volume
               mountPath: /usr/share/automation-gateway
