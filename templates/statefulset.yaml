@@ -48,6 +48,102 @@ spec:
         env:
           - name: automation_gateway_port
             value: {{ .Values.applicationPort | quote }}
+          - name: automation_gateway_bind_address
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: automation_gateway_global_log_directory
+            value: "/var/lib/automation_gateway"
+          - name: automation_gateway_data_file
+            value: "sqlite:////var/lib/automation-gateway/automation-gateway.db"
+          - name: automation_gateway_audit_db_file
+            value: "sqlite:////var/lib/automation-gateway/automation-gateway_audit.db"
+          - name: automation_gateway_exec_history_db_file
+            value: "sqlite:////var/lib/automation-gateway/automation-gateway_exec_history.db"
+          {{- if .Values.useTLS }}
+          - name: automation_gateway_server_certfile
+            value: "/etc/ssl/gateway/server.crt"
+          - name: automation_gateway_server_keyfile
+            value: "/etc/ssl/gateway/server.key"
+          - name: automation_gateway_server_cabundle
+            value: "/etc/ssl/gateway/ca-bundle.crt"
+          {{- end }}
+          {{/* Additional Ansible settings */}}
+          - name: automation_gateway_ansible_enabled
+            value: {{ .Values.applicationSettings.ansibleEnabled | default "false" | quote }}
+          - name: automation_gateway_ansible_venv_enabled
+            value: {{ .Values.applicationSettings.ansibleEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.ansibleEnabled }}
+          - name: automation_gateway_inventory_file
+            value: '/usr/share/automation-gateway/ansible/inventory/hosts'
+          - name: automation_gateway_module_path
+            value: "['/usr/local/lib/python3.9/site-packages/ansible/modules','/usr/share/automation-gateway/ansible/modules']"
+          - name: automation_gateway_collection_path
+            value: "['/usr/share/automation-gateway/ansible/collections']"
+          - name: automation_gateway_role_path
+            value: "['/opt/itential/automation-gateway/lib/python3.9/site-packages/automation_gateway/integrations/roles','/usr/share/automation-gateway/ansible/roles']"
+          - name: automation_gateway_extended_device_role_path
+            value: "['/usr/share/automation-gateway/venv/lib/python3.9/site-packages/automation_gateway/integrations/extensible_device_roles']"
+          - name: automation_gateway_playbook_path
+            value: "['/usr/share/automation-gateway/ansible/playbooks']"
+          - name: automation_gateway_ansible_venv_paths
+            value: "['/usr/share/automation-gateway/ansible/venv']"
+          {{- end }}
+          {{/* Additional Nornir settings */}}
+          - name: automation_gateway_nornir_enabled
+            value: {{ .Values.applicationSettings.nornirEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.nornirEnabled }}
+          - name: automation_gateway_nornir_config_file
+            value: "/usr/share/automation-gateway/nornir/config.yml"
+          - name: automation_gateway_nornir_module_recursive
+            value: "true"
+          - name: automation_gateway_nornir_module_path
+            value: "['/usr/share/automation-gateway/nornir/modules']"
+          {{- end }}
+          {{/* Additional Script settings */}}
+          - name: automation_gateway_scripts_enabled
+            value: {{ .Values.applicationSettings.scriptsEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.scriptsEnabled }}
+          - name: automation_gateway_script_recursive
+            value: "true"
+          - name: automation_gateway_script_path
+            value: "['/usr/share/automation-gateway/scripts']"
+          {{- end }}
+          {{/* Additional Python Virtual Environment settings */}}
+          - name: automation_gateway_python_venv_enabled
+            value: {{ .Values.applicationSettings.pythonVenvEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.pythonVenvEnabled }}
+          - name: automation_gateway_python_venv_paths
+            value: "['/usr/share/automation-gateway/venvs']"
+          {{- end }}
+          {{/* Additional Git settings */}}
+          - name: automation_gateway_git_enabled
+            value: {{ .Values.applicationSettings.gitEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.gitEnabled }}
+          - name: automation_gateway_git_key_path
+            value: "/usr/share/automation-gateway/ssh/"
+          - name: automation_gateway_git_repo_path
+            value: "/usr/share/automation-gateway/repos/"
+          - name: automation_gateway_git_strict_host_check
+            value: {{ .Values.applicationSettings.env.automation_gateway_git_strict_host_check | default "false" | quote }}
+          {{- end }}
+          {{/* Other feature settings */}}
+          - name: automation_gateway_grpc_enabled
+            value: {{ .Values.applicationSettings.grpcEnabled | default "false" | quote }}
+          - name: automation_gateway_http_requests_enabled
+            value: {{ .Values.applicationSettings.httpRequestsEnabled | default "false" | quote }}
+          - name: automation_gateway_netconf_enabled
+            value: {{ .Values.applicationSettings.netconfEnabled | default "false" | quote }}
+          - name: automation_gateway_netmiko_enabled
+            value: {{ .Values.applicationSettings.netmikoEnabled | default "false" | quote }}
+          - name: automation_gateway_terraform_enabled
+            value: "false"
+          - name: automation_gateway_authentication_disabled
+            value: {{ .Values.applicationSettings.env.automation_gateway_authentication_disabled | default "false" | quote }}
+          - name: automation_gateway_password_reset_enabled
+            value: {{ .Values.applicationSettings.env.automation_gateway_password_reset_enabled | default "false" | quote }}
+          - name: automation_gateway_mask_device_passwords
+            value: {{ .Values.applicationSettings.env.automation_gateway_mask_device_passwords | default "true" | quote }}
         {{- range $key, $value := .Values.applicationSettings.env }}
           - name: {{ $key }}
             value: {{ $value | quote }}
@@ -97,15 +193,15 @@ spec:
         volumeMounts:
           {{- if .Values.useTLS }}
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/certs/gateway/server.crt
+            mountPath: /etc/ssl/gateway/server.crt
             subPath: tls.crt
             readOnly: true
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/certs/gateway/server.key
+            mountPath: /etc/ssl/gateway/server.key
             subPath: tls.key
             readOnly: true
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/certs/gateway/ca-bundle.crt
+            mountPath: /etc/ssl/gateway/ca-bundle.crt
             subPath: ca.crt
             readOnly: true
           {{- end }}
