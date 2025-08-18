@@ -3,107 +3,138 @@
 ---
 # Default values for iag.
 
+# -- The number of replicas. IAG is intended to be a standalone application. Its not recommended
+# to run anymore than 1.
 replicaCount: 1
 
+# -- The application port.
 applicationPort: 8443
+
+# -- Toggle to turn on/off TLS support. Itential recommends running this application with TLS.
 useTLS: true
 
+# -- Toggle to use certManager as a sub chart.
 certManager:
   enabled: false
 
-# Optional dependency to generate a static external DNS name
+# -- Optional dependency to generate a static external DNS name
 external-dns:
   enabled: false
 
-# image The Itential image to use, its version, and its location
+# The Itential image to use, its version, and its location
+# The image name will depend on the entitlement that has been granted.
 image:
+  # -- The image repository
   repository: 497639811223.dkr.ecr.us-east-2.amazonaws.com/automation-gateway
+  # -- The image pull policy
   pullPolicy: IfNotPresent
+  # -- The image tag
   tag:
 
-# imagePullSecrets The secrets object used to pull the image from the repo
+# -- The secrets object used to pull the image from the repo
 imagePullSecrets: []
 
-# # ServiceAccount with IRSA
 serviceAccount:
   name:
 
+# The issuer to be used if using cert-manager to generate the TLS certificates
 issuer:
+  # -- Toggle true/false to use issuer.
   enabled: false
+  # -- The issuer kind.
+  kind: Issuer
+  # -- The name of the issuer.
   name: iag-ca-issuer
-  caSecretName:
+  # -- The CA secret to be used by this issuer when creating TLS certificates.
+  caSecretName: some-secret
 
+# The certificate object to use by cert-manager to generate the TLS certificates.
 certificate:
+  # -- Toggle to use the certificate object or not
   enabled: false
   issuerRef:
+    # -- The name of the issuer with the CA reference.
     name: iag-ca-issuer
+    # -- The issuer type
     kind: Issuer
-  renewBefore:
-  duration:
-  hostname:
+  # -- Specifies how long before the certificate expires that cert-manager should try to renew.
+  renewBefore: 48h
+  # -- Specifies how long the certificate should be valid for (its lifetime).
+  duration: 2160h
+  # -- The static DNS name to pass to the certificate.
+  hostname: iag.example.com
 
 # storageClass This is used to configure the storage class object which governs
 # how the mounted volumes are created.
 storageClass:
+  # -- Toggle the use of storageClass
   enabled: true
+  # -- The name of the storageClass
   name: "iag-ebs-gp3"
+  # -- Specifies which volume plugin provisions the storage
   provisioner: "" # suggested ebs.csi.aws.com
+  # -- What happens to PersistentVolumes when released. Itential recommends "retain".
   reclaimPolicy: "Retain"
+  # -- Controls when volume binding occurs
   volumeBindingMode: "WaitForFirstConsumer"
+  # -- Key-value pairs passed to the provisioner
   parameters:
 
 # persistentVolumeClaims These are used for Itential Automation Gateway persistence
 # and for any customer specific assets (ansible or python scripts).
 persistentVolumeClaims:
-  # dataClaim This represents the claim for the persistence for the sqlite data
-  # required by IAG.
+  # -- Toggle the use of persistentVolumeClaims
   enabled: true
+  # -- This represents the claim for the persistence for the sqlite data required by IAG.
   dataClaim:
-    # storage The requested amount of storage
+    # -- storage The requested amount of storage
     storage: "10Gi"
-  # codeClaim This represents the claim for the location of all the customer authored
+  # -- This represents the claim for the location of all the customer authored
   # scripts, ansible code, and other customizations.
   codeClaim:
-    # storage The requested amount of storage
+    # -- The requested amount of storage
     storage: "10Gi"
 
 # service The Kubernetes service object for this application
 service:
-  # type The service type
+  # -- The service type
   type: "ClusterIP"
-  # name The name of this Kubernetes service object
+  # -- The name of this Kubernetes service object
   name: "iag-service"
-  # port The port that this service object is listening on
+  # -- The port that this service object is listening on
   port: 443
 
 # ingress The Kubernetes ingress object for this application.
 ingress:
-  # enabled The ingress object can be disabled and will not be created with this set to false
+  # -- The ingress object can be disabled and will not be created with this set to false
   enabled: true
-  # name The name of this Kubernetes ingress object
+  # -- The name of this Kubernetes ingress object
   name: "iag-ingress"
-  # className The ingress controller class name
+  # -- The ingress controller class name
   className: ""
-  # annotations The annotations for this ingress object. These are passed into the template
+  # -- The annotations for this ingress object. These are passed into the template
   # as is and will render the contents as you see here.
   annotations:
-  # hosts The list of hosts for this ingress and their associated properties
+  # -- The list of hosts for this ingress and their associated properties
   hosts:
     - host: "iag.example.com"
       paths:
         - path: "/"
           pathType: "Prefix"
+  # TLS is terminated at the statefulset pod by design.
   tls: []
 
 statefulset:
   enabled: true
 
+# -- Additional pod annotations
 podAnnotations: {}
+# -- Additional pod labels
 podLabels: {}
+# -- Additional security context
 securityContext: {}
 
-# podSecurityContext The pods will mount some persistent volumes. These settings
-# allow for that to happen.
+# -- The pods will mount some persistent volumes. These settings allow for that to happen.
 podSecurityContext:
   fsGroup: 1001
   runAsUser: 1001
@@ -155,83 +186,131 @@ startupProbe:
   successThreshold: 1
   path: "/api/v2.0/poll"
 
-# propertiesYaml This is used to generate the IAG config file that the IAG
-# application will use. These properties are all passed into the configmap
-# which is then mounted as a file and read by the application.
+# There are a few extra features enabled by the configmaps.
 configMap:
   enabled: true
 
-# volumes Additional volumes on the output Deployment definition.
+# -- Additional volumes on the output Statefulset definition.
 volumes: []
 
-# Additional volumeMounts on the output Deployment definition.
+# -- Additional volumeMounts on the output Statefulset definition.
 volumeMounts: []
 
+# -- Additional nodeSelectors
 nodeSelector:
   itential.io/app: "iag"
 
+# -- Additional tolerations
 tolerations:
 - effect: "NoSchedule"
   key: "itential.io/role"
   operator: "Equal"
   value: "iag"
 
+# -- Additional affinity
 affinity: {}
 
+# IAG application settings. These settings directly control IAG application features. Please
+# see the Itential documentation for a complete list and explanation.
+# https://docs.itential.com/docs/iag-configuration-2023-3
 applicationSettings:
   enabled: true
+  # -- Enables the Ansible feature set in IAG.
   ansibleEnabled: true
+  # -- Enables the HTTP request feature set in IAG.
   httpRequestsEnabled: true
+  # -- Enables the Netconf feature set in IAG.
   netconfEnabled: true
+  # -- Enables the Netmiko feature set in IAG.
   netmikoEnabled: true
+  # -- Enables the Nornir feature set in IAG.
   nornirEnabled: false
+  # -- Enables the custom scripts feature set in IAG.
   scriptsEnabled: true
+  # -- Enables the Python Virtual Environment feature set in IAG.
   pythonVenvEnabled: true
+  # -- Enables the GRPC feature set in IAG.
   grpcEnabled: true
+  # -- Enables the Git integration feature set in IAG.
   gitEnabled: true
   # Environment variables that are passed into the container
   env:
     # General application settings
+    # -- Controls the number of threads available to use for handling HTTP requests. Generally, this
+    # should be set 2 - 4 times the number CPUs available.
     automation_gateway_http_server_threads: 8
+    # -- Log level controlling what appears in the log messages.
     automation_gateway_logging_level: 'INFO'
+    # -- Idle session timeout.
     automation_gateway_authentication_idle_timeout: 600
 
     # SQLite settings
+    # -- Enable audit trail in SQLite.
     automation_gateway_audit: false
+    # -- The number of days to retain audit information.
     automation_gateway_audit_retention_days: 30
 
     # LDAP settings
+    # -- Toggle to enable LDAP authentication.
     automation_gateway_ldap_auth_enabled: false
+    # -- LDAP server hostname or IP address.
     # automation_gateway_ldap_server: ""
+    # -- LDAP BASE DN
     # automation_gateway_ldap_base_dn: ""
+    # -- LDAP BIND Username
     # automation_gateway_ldap_bind_user_dn: ""
+    # -- LDAP BIND Password
     # automation_gateway_ldap_bind_user_password: ""
+    # -- Enable LDAPS
     # automation_gateway_ldap_secure_enabled: false
-    # automation_gateway_ldap_secure_validation_enabled: ""
+    # -- Validate the servers TLS certificate
+    # automation_gateway_ldap_secure_validation_enabled: false
+    # -- Location of local CA certificate file for server validation
     # automation_gateway_ldap_ca_certs_file: ""
-    # automation_gateway_ldap_always_search_bind: ""
+    # -- Search LDAP for the username before doing a bind
+    # automation_gateway_ldap_always_search_bind: true
+    # -- LDAP user search filter
     # automation_gateway_ldap_user_search_filter: '(objectclass=person)'
+    # -- LDAP user search scope. Options "LEVEL" or "SUBTREE".
     # automation_gateway_ldap_user_search_scope: 'SUBTREE'
+    # -- LDAP User login attribute
     # automation_gateway_ldap_user_login_attr: 'sAMAccountName'
+    # -- LDAP User login RDN (relative directory name) attribute. Examples: uid=testuser,ou=users,dc=example,dc=com = 'uid', cn=testuser,ou=users,dc=example,dc=com = 'cn'
     # automation_gateway_ldap_user_rdn_attr: 'cn'
+    # -- LDAP user DN used to be prepended to the base DN to limit the scope when searching for users.
     # automation_gateway_ldap_user_dn : '' # OU=users
+    # -- LDAP Group search filter
     # automation_gateway_ldap_group_search_filter: '(objectClass=group)'
+    # -- LDAP Group search scope. Options "LEVEL" or "SUBTREE"
     # automation_gateway_ldap_group_search_scope: 'SUBTREE'
+    # -- LDAP Group members attribute.
     # automation_gateway_ldap_group_members_attr: 'member'
+    # -- LDAP group DN used to be prepended to the base DN to limit the scope when searching for groups.
     # automation_gateway_ldap_group_dn : '' # OU=groups
 
     # Ansible settings
+    # -- Enable Ansible debug logs.
     automation_gateway_ansible_debug: false
+    # -- A flag to prevent deletion of the temporary files generated by executing Ansible content.
     automation_gateway_no_cleanup: false
+    # -- Path of the file that contains a password used by ansible-vault to encrypt sensitive data.
     # automation_gateway_vault_password_file: "/usr/share/automation-gateway/conf/.vault_password_file"
 
     # Hashicorp Vault settings
+    # -- A flag that enables Hashicorp Vault support.
     automation_gateway_vault_enabled: false
+    # -- The URL to the Hashicorp Vault server.
     # automation_gateway_vault_server: ""
+    # -- The mount point on which the Hashicorp Vault KV-V2 secret engine is enabled.
     # automation_gateway_vault_mount_point: secret
+    # -- The path to a file containing the vault access token used by the AG Server for Hashicorp Vault operations.
     # automation_gateway_vault_access_token: "/usr/share/automation-gateway/conf/.vault_token_file"
+    # -- A flag that enables TLS certificate verification when sending requests to the Hashicorp Vault Server.
     # automation_gateway_vault_cert_verification: false
+    # -- Path to the CA file for Hashivault.
     # automation_gateway_vault_ca_file: "/etc/ssl/certs/vault/vault-ca-bundle.crt"
+    # -- Path to the certificate file for Hashivault.
     # automation_gateway_vault_client_cert_file: "/etc/ssl/certs/vault/vault.crt"
+    # -- Path to the key file for Hashivault.
     # automation_gateway_vault_client_key_file: "/etc/ssl/certs/vault/vault.key"
 
