@@ -83,7 +83,7 @@ spec:
           - name: automation_gateway_role_path
             value: "['/opt/itential/automation-gateway/lib/python3.9/site-packages/automation_gateway/integrations/roles','/usr/share/automation-gateway/ansible/roles']"
           - name: automation_gateway_extended_device_role_path
-            value: "['/usr/share/automation-gateway/venv/lib/python3.9/site-packages/automation_gateway/integrations/extensible_device_roles']"
+            value: "['/usr/local/lib/python3.9/site-packages/automation_gateway/integrations/extensible_device_roles/ansible_netmiko']"
           - name: automation_gateway_playbook_path
             value: "['/usr/share/automation-gateway/ansible/playbooks']"
           - name: automation_gateway_ansible_venv_paths
@@ -121,9 +121,9 @@ spec:
             value: {{ .Values.applicationSettings.gitEnabled | default "false" | quote }}
           {{- if .Values.applicationSettings.gitEnabled }}
           - name: automation_gateway_git_key_path
-            value: "/usr/share/automation-gateway/ssh/"
+            value: "/usr/share/automation-gateway/git/ssh/"
           - name: automation_gateway_git_repo_path
-            value: "/usr/share/automation-gateway/repos/"
+            value: {{ .Values.applicationSettings.env.automation_gateway_git_repo_path | default "/usr/share/automation-gateway/git/repos/" | quote }}
           - name: automation_gateway_git_strict_host_check
             value: {{ .Values.applicationSettings.env.automation_gateway_git_strict_host_check | default "false" | quote }}
           {{- end }}
@@ -271,11 +271,15 @@ spec:
             - /bin/sh
             - -c
             - |
-              if [ -f /usr/share/automation-gateway/ssh/id_rsa ]; then
-                chmod 0400 /usr/share/automation-gateway/ssh/id_rsa
-                echo "Set permissions on id_rsa"
+              echo "Searching for id_rsa files..."
+              find /usr/share/automation-gateway -name "id_rsa" -type f -exec chmod 0400 {} \; -exec echo "Set permissions on {}" \;
+
+              # Count how many files were found
+              count=$(find /usr/share/automation-gateway -name "id_rsa" -type f | wc -l)
+              if [ $count -eq 0 ]; then
+                echo "No id_rsa files found"
               else
-                echo "id_rsa not found, skipping"
+                echo "Processed $count id_rsa file(s)"
               fi
           volumeMounts:
             - name: iag-code-volume
