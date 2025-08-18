@@ -223,6 +223,7 @@ applicationSettings:
     # Ansible settings
     automation_gateway_ansible_debug: false
     automation_gateway_no_cleanup: false
+    # automation_gateway_vault_password_file: "/usr/share/automation-gateway/conf/.vault_password_file"
 
     # Hashicorp Vault settings
     automation_gateway_vault_enabled: false

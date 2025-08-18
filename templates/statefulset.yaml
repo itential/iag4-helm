@@ -71,6 +71,8 @@ spec:
           {{/* Additional Ansible settings */}}
           - name: automation_gateway_ansible_enabled
             value: {{ .Values.applicationSettings.ansibleEnabled | default "false" | quote }}
+          - name: automation_gateway_ansible_venv_enabled
+            value: {{ .Values.applicationSettings.ansibleEnabled | default "false" | quote }}
           {{- if .Values.applicationSettings.ansibleEnabled }}
           - name: automation_gateway_inventory_file
             value: '/usr/share/automation-gateway/ansible/inventory/hosts'
@@ -84,8 +86,8 @@ spec:
             value: "['/usr/share/automation-gateway/venv/lib/python3.9/site-packages/automation_gateway/integrations/extensible_device_roles']"
           - name: automation_gateway_playbook_path
             value: "['/usr/share/automation-gateway/ansible/playbooks']"
-          - name: automation_gateway_vault_password_file
-            value: "/usr/share/automation-gateway/conf/.vault_password_file"
+          - name: automation_gateway_ansible_venv_paths
+            value: "['/usr/share/automation-gateway/ansible/venv']"
           {{- end }}
           {{/* Additional Nornir settings */}}
           - name: automation_gateway_nornir_enabled
@@ -111,7 +113,7 @@ spec:
           - name: automation_gateway_python_venv_enabled
             value: {{ .Values.applicationSettings.pythonVenvEnabled | default "false" | quote }}
           {{- if .Values.applicationSettings.pythonVenvEnabled }}
-          - name: automation_gateway_python_venv_path
+          - name: automation_gateway_python_venv_paths
             value: "['/usr/share/automation-gateway/venvs']"
           {{- end }}
           {{/* Additional Git settings */}}
