@@ -112,6 +112,9 @@ This volume is intended to store any custom assets that the user is bringing to 
 |   ├── ansible_venvs
 │   └── roles
 ├── venv/ # custom python virtual environments
+├── git/
+│   ├── ssh
+│   └── repos
 ├── nornir/
 │   ├── conf
 │   ├── inventory
