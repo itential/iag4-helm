@@ -587,3 +587,63 @@ tests:
           value: "false"
       - notExists:
           path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_server")].value
+
+  - it: should set the expected environment variables when LDAP is enabled
+    set:
+      statefulset:
+        enabled: true
+      applicationSettings:
+        ldapEnabled: true
+        ldapTLSEnabled: false
+        ldapSecretName: "ldap-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_auth_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_secure_enabled")].value
+          value: "false"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_secure_validation_enabled")].value
+          value: "false"
+
+  - it: should set the expected environment variables with LDAP TLS is enabled
+    set:
+      statefulset:
+        enabled: true
+      applicationSettings:
+        ldapEnabled: true
+        ldapTLSEnabled: true
+        ldapCertVerificationEnabled: true
+        ldapSecretName: "ldap-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_auth_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_secure_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_secure_validation_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_ca_certs_file")].value
+          value: "/etc/ssl/ldap/tls.crt"
+
+  - it: should set the expected environment variables with LDAP is disabledset
+    set:
+      statefulset:
+        enabled: true
+      applicationSettings:
+        ldapEnabled: false
+        ldapSecretName: "ldap-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_auth_enabled")].value
+          value: "false"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_secure_enabled")].value
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_secure_validation_enabled")].value
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_ca_certs_file")].value

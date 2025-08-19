@@ -148,6 +148,24 @@ spec:
             value: "/etc/ssl/hv/tls.key"
           {{- end }}
           {{- end }}
+          {{/* LDAP settings */}}
+          - name: automation_gateway_ldap_auth_enabled
+            value: {{ .Values.applicationSettings.ldapEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.ldapEnabled }}
+          - name: automation_gateway_ldap_secure_enabled
+            value: {{ .Values.applicationSettings.ldapTLSEnabled | default "false" | quote }}
+          - name: automation_gateway_ldap_secure_validation_enabled
+            value: {{ .Values.applicationSettings.ldapCertVerificationEnabled | default "false" | quote }}
+          - name: automation_gateway_ldap_bind_user_password
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.applicationSettings.ldapSecretName }}
+                key: password
+          {{- if .Values.applicationSettings.ldapTLSEnabled }}
+          - name: automation_gateway_ldap_ca_certs_file
+            value: "/etc/ssl/ldap/tls.crt"
+          {{- end }}
+          {{- end }}
           {{/* Other feature settings */}}
           - name: automation_gateway_grpc_enabled
             value: {{ .Values.applicationSettings.grpcEnabled | default "false" | quote }}
@@ -268,6 +286,12 @@ spec:
             subPath: token
             readOnly: true
           {{- end }}
+          {{- if .Values.applicationSettings.ldapTLSEnabled}}
+          - name: gateway-ldap-volume
+            mountPath: /etc/ssl/ldap/tls.crt
+            subPath: tls.crt
+            readOnly: true
+          {{- end }}
         {{- with .Values.volumeMounts }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -293,6 +317,11 @@ spec:
         - name: gateway-hv-volume
           secret:
             secretName: {{ .Values.applicationSettings.hvSecretName }}
+        {{- end }}
+        {{- if .Values.applicationSettings.ldapEnabled }}
+        - name: gateway-ldap-volume
+          secret:
+            secretName: {{ .Values.applicationSettings.ldapSecretName }}
         {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}

@@ -199,6 +199,12 @@ applicationSettings:
   hvCertVerification: false
   hvMountPoint: "secret"
 
+  # LDAP settings
+  ldapEnabled: false
+  ldapTLSEnabled: false
+  ldapCertVerificationEnabled: false
+  ldapSecretName: "ldap-secret"
+
   # Environment variables that are passed into the container
   env:
     # General application settings
@@ -211,14 +217,9 @@ applicationSettings:
     automation_gateway_audit_retention_days: 30
 
     # LDAP settings
-    automation_gateway_ldap_auth_enabled: false
     # automation_gateway_ldap_server: ""
     # automation_gateway_ldap_base_dn: ""
     # automation_gateway_ldap_bind_user_dn: ""
-    # automation_gateway_ldap_bind_user_password: ""
-    # automation_gateway_ldap_secure_enabled: false
-    # automation_gateway_ldap_secure_validation_enabled: ""
-    # automation_gateway_ldap_ca_certs_file: ""
     # automation_gateway_ldap_always_search_bind: ""
     # automation_gateway_ldap_user_search_filter: '(objectclass=person)'
     # automation_gateway_ldap_user_search_scope: 'SUBTREE'
