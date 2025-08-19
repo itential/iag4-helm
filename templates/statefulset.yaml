@@ -127,6 +127,27 @@ spec:
           - name: automation_gateway_git_strict_host_check
             value: {{ .Values.applicationSettings.env.automation_gateway_git_strict_host_check | default "false" | quote }}
           {{- end }}
+          {{/* Hashicorp Vault integration */}}
+          - name: automation_gateway_vault_enabled
+            value: {{ .Values.applicationSettings.hvEnabled | default "false" | quote }}
+          {{- if .Values.applicationSettings.hvEnabled }}
+          - name: automation_gateway_vault_server
+            value: {{ .Values.applicationSettings.hvHost }}
+          - name: automation_gateway_vault_mount_point
+            value: "secret"
+          - name: automation_gateway_vault_access_token
+            value: "/usr/share/automation-gateway/conf/.vault_token_file"
+          - name: automation_gateway_vault_cert_verification
+            value: {{ .Values.applicationSettings.hvCertVerification | default "false" | quote}}
+          {{- if .Values.applicationSettings.hvTLS }}
+          - name: automation_gateway_vault_ca_file
+            value: "/etc/ssl/hv/ca.crt"
+          - name: automation_gateway_vault_client_cert_file
+            value: "/etc/ssl/hv/tls.crt"
+          - name: automation_gateway_vault_client_key_file
+            value: "/etc/ssl/hv/tls.key"
+          {{- end }}
+          {{- end }}
           {{/* Other feature settings */}}
           - name: automation_gateway_grpc_enabled
             value: {{ .Values.applicationSettings.grpcEnabled | default "false" | quote }}
@@ -228,6 +249,25 @@ spec:
             subPath: "ssh_config"
             readOnly: true
           {{- end }}
+          {{- if .Values.applicationSettings.hvTLS }}
+          # TLS for Hashivault
+          - name: gateway-hv-volume
+            mountPath: /etc/ssl/hv/ca.crt"
+            subPath: ca.crt
+            readOnly: true
+          - name: gateway-hv-volume
+            mountPath: /etc/ssl/hv/tls.crt
+            subPath: tls.crt
+            readOnly: true
+          - name: gateway-hv-volume
+            mountPath: /etc/ssl/hv/tls.key
+            subPath: tls.key
+            readOnly: true
+          - name: gateway-hv-volume
+            mountPath: /usr/share/automation-gateway/conf/.vault_token_file
+            subPath: token
+            readOnly: true
+          {{- end }}
         {{- with .Values.volumeMounts }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -248,6 +288,11 @@ spec:
         - name: "ssh-volume"
           configMap:
             name: "ssh-config-map"
+        {{- end }}
+        {{- if .Values.applicationSettings.hvEnabled }}
+        - name: gateway-hv-volume
+          secret:
+            secretName: {{ .Values.applicationSettings.hvSecretName }}
         {{- end }}
       {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}

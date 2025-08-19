@@ -498,3 +498,92 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["foo"]
           value: bar
+
+  - it: should set the expected environment variables when hashi vault is enabled
+    set:
+      statefulset:
+        enabled: true
+      applicationSettings:
+        hvEnabled: true
+        hvSecretName: "hv-secret"
+        hvHost: "hashivault.example.com"
+        hvTLS: true
+        hvCertVerification: true
+        hvMountPoint: "secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_server")].value
+          value: "hashivault.example.com"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_mount_point")].value
+          value: "secret"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_access_token")].value
+          value: "/usr/share/automation-gateway/conf/.vault_token_file"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_cert_verification")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_ca_file")].value
+          value: "/etc/ssl/hv/ca.crt"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_client_cert_file")].value
+          value: "/etc/ssl/hv/tls.crt"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_client_key_file")].value
+          value: "/etc/ssl/hv/tls.key"
+
+  - it: should set the expected environment variables when hashi vault is enabled but hvTLS is not
+    set:
+      statefulset:
+        enabled: true
+      applicationSettings:
+        hvEnabled: true
+        hvSecretName: "hv-secret"
+        hvHost: "hashivault.example.com"
+        hvTLS: false
+        hvCertVerification: false
+        hvMountPoint: "secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_server")].value
+          value: "hashivault.example.com"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_mount_point")].value
+          value: "secret"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_access_token")].value
+          value: "/usr/share/automation-gateway/conf/.vault_token_file"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_cert_verification")].value
+          value: "false"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_ca_file")].value
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_client_cert_file")].value
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_client_key_file")].value
+
+  - it: should set the expected environment variables when hashi vault is disabled
+    set:
+      statefulset:
+        enabled: true
+      applicationSettings:
+        hvEnabled: false
+        hvSecretName: "hv-secret"
+        hvHost: "hashivault.example.com"
+        hvTLS: true
+        hvCertVerification: true
+        hvMountPoint: "secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_enabled")].value
+          value: "false"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_vault_server")].value

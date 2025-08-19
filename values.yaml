@@ -233,6 +233,21 @@ applicationSettings:
   grpcEnabled: true
   # -- Enables the Git integration feature set in IAG.
   gitEnabled: true
+
+  # Hashicorp Vault settings
+  # -- Enables the Hashicorp Vault integration.
+  hvEnabled: false
+  # -- The name of the Secret object containing Hashicorp TLS information.
+  hvSecretName: "hv-secret"
+  # -- The host name of the Hashicorp Vault server.
+  hvHost: "hashivault.example.com"
+  # -- Use TLS when connecting to Hashicorp Vault server.
+  hvTLS: true
+  # -- Enables certificate verification.
+  hvCertVerification: false
+  # -- The mount point.
+  hvMountPoint: "secret"
+
   # Environment variables that are passed into the container
   env:
     # General application settings
@@ -295,22 +310,3 @@ applicationSettings:
     automation_gateway_no_cleanup: false
     # -- Path of the file that contains a password used by ansible-vault to encrypt sensitive data.
     # automation_gateway_vault_password_file: "/usr/share/automation-gateway/conf/.vault_password_file"
-
-    # Hashicorp Vault settings
-    # -- A flag that enables Hashicorp Vault support.
-    automation_gateway_vault_enabled: false
-    # -- The URL to the Hashicorp Vault server.
-    # automation_gateway_vault_server: ""
-    # -- The mount point on which the Hashicorp Vault KV-V2 secret engine is enabled.
-    # automation_gateway_vault_mount_point: secret
-    # -- The path to a file containing the vault access token used by the AG Server for Hashicorp Vault operations.
-    # automation_gateway_vault_access_token: "/usr/share/automation-gateway/conf/.vault_token_file"
-    # -- A flag that enables TLS certificate verification when sending requests to the Hashicorp Vault Server.
-    # automation_gateway_vault_cert_verification: false
-    # -- Path to the CA file for Hashivault.
-    # automation_gateway_vault_ca_file: "/etc/ssl/certs/vault/vault-ca-bundle.crt"
-    # -- Path to the certificate file for Hashivault.
-    # automation_gateway_vault_client_cert_file: "/etc/ssl/certs/vault/vault.crt"
-    # -- Path to the key file for Hashivault.
-    # automation_gateway_vault_client_key_file: "/etc/ssl/certs/vault/vault.key"
-

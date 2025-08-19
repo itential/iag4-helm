@@ -190,6 +190,15 @@ applicationSettings:
   pythonVenvEnabled: true
   grpcEnabled: true
   gitEnabled: true
+
+  # Hashivault settings
+  hvEnabled: true
+  hvSecretName: "hv-secret"
+  hvHost: "hashivault.example.com"
+  hvTLS: true
+  hvCertVerification: false
+  hvMountPoint: "secret"
+
   # Environment variables that are passed into the container
   env:
     # General application settings
@@ -224,13 +233,3 @@ applicationSettings:
     # Ansible settings
     automation_gateway_ansible_debug: false
     automation_gateway_no_cleanup: false
-
-    # Hashicorp Vault settings
-    automation_gateway_vault_enabled: false
-    # automation_gateway_vault_server: ""
-    # automation_gateway_vault_mount_point: secret
-    # automation_gateway_vault_access_token: "/usr/share/automation-gateway/conf/.vault_token_file"
-    # automation_gateway_vault_cert_verification: false
-    # automation_gateway_vault_ca_file: "/etc/ssl/certs/vault/vault-ca-bundle.crt"
-    # automation_gateway_vault_client_cert_file: "/etc/ssl/certs/vault/vault.crt"
-    # automation_gateway_vault_client_key_file: "/etc/ssl/certs/vault/vault.key"
