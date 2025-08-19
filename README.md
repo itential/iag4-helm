@@ -42,6 +42,18 @@ This is the secret that will pull the image from the Itential ECR. Name to be de
 This secret represents the CA used by cert-manager to derive all the TLS certificates. Name to be
 provided by the user of the chart in the values file (`issuer.caSecretName`) if using cert-manager.
 
+##### Hashicorp Vault
+
+If this installation is configured to use Hashicorp Vault then an additional secret should be
+provided to secure the connection using TLS. The secret must have the following keys.
+
+| Key | Description |
+|:----|:------------|
+| ca.crt | The CA file for the Hashivault certificates |
+| tls.crt | The TLS certificate for the Hashivault |
+| tls.key | The key for the certificate |
+| token | The token for the vault server |
+
 #### Certificates
 
 The chart will require a Certificate Authority to be added to the Kubernetes environment. This is
