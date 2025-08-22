@@ -14,4 +14,18 @@ The application will be available at:
 
 The default user is "admin@itential".
 
+Some of the key configurations:
+  Ansible enabled: {{ .Values.applicationSettings.ansibleEnabled }}
+  Git enabled: {{ .Values.applicationSettings.gitEnabled }}
+  GRPC enabled: {{ .Values.applicationSettings.grpcEnabled }}
+  Hashicorp Vault enabled: {{ .Values.applicationSettings.hvEnabled }}
+  HTTP requests enabled: {{ .Values.applicationSettings.httpRequestsEnabled }}
+  LDAP enabled: {{ .Values.applicationSettings.ldapEnabled }}
+  Netconf enabled: {{ .Values.applicationSettings.netconfEnabled }}
+  Netmiko enabled: {{ .Values.applicationSettings.netmikoEnabled }}
+  Nornir enabled: {{ .Values.applicationSettings.nornirEnabled }}
+  Python virtual environments enabled: {{ .Values.applicationSettings.pythonVenvEnabled }}
+  Scripts enabled: {{ .Values.applicationSettings.scriptsEnabled }}
+  TLS enabled: {{ .Values.useTLS }}
+
 For more information consult the Itential documentation https://docs.itential.com/docs/iag-release-versions
