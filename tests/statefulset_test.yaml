@@ -110,13 +110,13 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_server_certfile")].value
-          value: "/etc/ssl/gateway/server.crt"
+          value: "/etc/ssl/gateway/tls.crt"
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_server_keyfile")].value
-          value: "/etc/ssl/gateway/server.key"
+          value: "/etc/ssl/gateway/tls.key"
       - equal:
           path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_server_cabundle")].value
-          value: "/etc/ssl/gateway/ca-bundle.crt"
+          value: "/etc/ssl/gateway/ca.crt"
 
   # Test 6: Test TLS volume mounts
   - it: should mount TLS volumes when useTLS is true
@@ -132,8 +132,7 @@ tests:
           path: spec.template.spec.containers[0].volumeMounts
           content:
             name: gateway-cert-volume
-            mountPath: /etc/ssl/gateway/server.crt
-            subPath: tls.crt
+            mountPath: /etc/ssl/gateway
             readOnly: true
       - contains:
           path: spec.template.spec.volumes

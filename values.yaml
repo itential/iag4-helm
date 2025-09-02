@@ -70,7 +70,7 @@ storageClass:
   # -- Toggle the use of storageClass
   enabled: true
   # -- The name of the storageClass
-  name: "iag-ebs-gp3"
+  name: "example-class"
   # -- Specifies which volume plugin provisions the storage
   provisioner: "" # suggested ebs.csi.aws.com
   # -- What happens to PersistentVolumes when released. Itential recommends "retain".
@@ -197,15 +197,10 @@ volumes: []
 volumeMounts: []
 
 # -- Additional nodeSelectors
-nodeSelector:
-  itential.io/app: "iag"
+nodeSelector: {}
 
-# -- Additional tolerations
-tolerations:
-- effect: "NoSchedule"
-  key: "itential.io/role"
-  operator: "Equal"
-  value: "iag"
+# # -- Additional tolerations
+tolerations: {}
 
 # -- Additional affinity
 affinity: {}
@@ -242,7 +237,7 @@ applicationSettings:
   # -- The host name of the Hashicorp Vault server.
   hvHost: "hashivault.example.com"
   # -- Use TLS when connecting to Hashicorp Vault server.
-  hvTLS: true
+  hvTLS: false
   # -- Enables certificate verification.
   hvCertVerification: false
   # -- The mount point.

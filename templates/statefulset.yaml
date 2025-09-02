@@ -62,11 +62,11 @@ spec:
             value: "sqlite:////var/lib/automation-gateway/automation-gateway_exec_history.db"
           {{- if .Values.useTLS }}
           - name: automation_gateway_server_certfile
-            value: "/etc/ssl/gateway/server.crt"
+            value: "/etc/ssl/gateway/tls.crt"
           - name: automation_gateway_server_keyfile
-            value: "/etc/ssl/gateway/server.key"
+            value: "/etc/ssl/gateway/tls.key"
           - name: automation_gateway_server_cabundle
-            value: "/etc/ssl/gateway/ca-bundle.crt"
+            value: "/etc/ssl/gateway/ca.crt"
           {{- end }}
           {{/* Additional Ansible settings */}}
           - name: automation_gateway_ansible_enabled
@@ -232,16 +232,7 @@ spec:
         volumeMounts:
           {{- if .Values.useTLS }}
           - name: gateway-cert-volume
-            mountPath: /etc/ssl/gateway/server.crt
-            subPath: tls.crt
-            readOnly: true
-          - name: gateway-cert-volume
-            mountPath: /etc/ssl/gateway/server.key
-            subPath: tls.key
-            readOnly: true
-          - name: gateway-cert-volume
-            mountPath: /etc/ssl/gateway/ca-bundle.crt
-            subPath: ca.crt
+            mountPath: /etc/ssl/gateway
             readOnly: true
           {{- end }}
           {{- if .Values.configMap.enabled }}
