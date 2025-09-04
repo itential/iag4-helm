@@ -53,7 +53,7 @@ spec:
               fieldRef:
                 fieldPath: status.podIP
           - name: automation_gateway_global_log_directory
-            value: "/var/lib/automation_gateway"
+            value: "/var/lib/automation-gateway"
           - name: automation_gateway_data_file
             value: "sqlite:////var/lib/automation-gateway/automation-gateway.db"
           - name: automation_gateway_audit_db_file
