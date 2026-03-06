@@ -3,6 +3,30 @@ entries:
   iag:
   - apiVersion: v2
     appVersion: 4.3.4
+    created: "2026-03-06T16:33:32.760490631Z"
+    dependencies:
+    - condition: certManager.enabled
+      name: cert-manager
+      repository: https://charts.jetstack.io
+      version: 1.12.3
+    - condition: external-dns.enabled
+      name: external-dns
+      repository: https://kubernetes-sigs.github.io/external-dns/
+      version: 1.17.0
+    description: A Helm chart for Kubernetes that can build an Itential Automation
+      Gateway environment (IAG) version 4.
+    digest: 23e23e73611b93a89ca80218f153598fd5a03960c6a96be4d21f83ca4d7b00bd
+    home: https://github.com/itential/iag4-helm
+    icon: https://www.itential.com/wp-content/uploads/2023/12/Product-Icon_IAG.png
+    name: iag
+    sources:
+    - https://github.com/itential/iag4-helm
+    type: application
+    urls:
+    - https://github.com/itential/iag4-helm/releases/download/iag-1.0.5/iag-1.0.5.tgz
+    version: 1.0.5
+  - apiVersion: v2
+    appVersion: 4.3.4
     created: "2025-09-04T13:58:57.834175669Z"
     dependencies:
     - condition: certManager.enabled
@@ -49,4 +73,4 @@ entries:
     urls:
     - https://github.com/itential/iag4-helm/releases/download/iag-1.0.3/iag-1.0.3.tgz
     version: 1.0.3
-generated: "2025-09-04T13:58:57.834200327Z"
+generated: "2026-03-06T16:33:32.760507523Z"
