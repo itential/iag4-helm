@@ -212,6 +212,8 @@ applicationSettings:
   enabled: true
   # -- Enables the Ansible feature set in IAG.
   ansibleEnabled: true
+  # -- Enables Ansible virtual environments. Independent of ansibleEnabled.
+  ansibleVenvEnabled: true
   # -- Enables the HTTP request feature set in IAG.
   httpRequestsEnabled: true
   # -- Enables the Netconf feature set in IAG.
@@ -228,6 +230,10 @@ applicationSettings:
   grpcEnabled: true
   # -- Enables the Git integration feature set in IAG.
   gitEnabled: true
+
+  # -- Override the bind address for IAG. Defaults to the pod IP via the downward API when empty.
+  # Set to "0.0.0.0" to bind on all interfaces.
+  bindAddress: ""
 
   # Hashicorp Vault settings
   # -- Enables the Hashicorp Vault integration.

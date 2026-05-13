@@ -49,9 +49,13 @@ spec:
           - name: automation_gateway_port
             value: {{ .Values.applicationPort | quote }}
           - name: automation_gateway_bind_address
+            {{- if .Values.applicationSettings.bindAddress }}
+            value: {{ .Values.applicationSettings.bindAddress | quote }}
+            {{- else }}
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+            {{- end }}
           - name: automation_gateway_global_log_directory
             value: "/var/lib/automation-gateway"
           - name: automation_gateway_data_file
@@ -72,7 +76,7 @@ spec:
           - name: automation_gateway_ansible_enabled
             value: {{ .Values.applicationSettings.ansibleEnabled | default "false" | quote }}
           - name: automation_gateway_ansible_venv_enabled
-            value: {{ .Values.applicationSettings.ansibleEnabled | default "false" | quote }}
+            value: {{ .Values.applicationSettings.ansibleVenvEnabled | default "false" | quote }}
           {{- if .Values.applicationSettings.ansibleEnabled }}
           - name: automation_gateway_inventory_file
             value: '/usr/share/automation-gateway/ansible/inventory/hosts'
@@ -190,7 +194,7 @@ spec:
         {{- end }}
         ports:
           - name: http
-            containerPort: {{ .Values.service.port }}
+            containerPort: {{ .Values.applicationPort }}
             protocol: TCP
         {{- if .Values.startupProbe.enabled }}
         startupProbe:
@@ -262,7 +266,7 @@ spec:
           {{- if .Values.applicationSettings.hvTLS }}
           # TLS for Hashivault
           - name: gateway-hv-volume
-            mountPath: /etc/ssl/hv/ca.crt"
+            mountPath: /etc/ssl/hv/ca.crt
             subPath: ca.crt
             readOnly: true
           - name: gateway-hv-volume

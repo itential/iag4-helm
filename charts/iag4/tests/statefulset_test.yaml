@@ -645,6 +645,56 @@ tests:
           path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ldap_ca_certs_file")].value
           value: "/etc/ssl/ldap/tls.crt"
 
+  # Test: bindAddress override uses value instead of downward API
+  - it: should use static value for bind address when applicationSettings.bindAddress is set
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: true
+        bindAddress: "0.0.0.0"
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_bind_address")].value
+          value: "0.0.0.0"
+      - notExists:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_bind_address")].valueFrom
+
+  # Test: ansibleVenvEnabled is independent of ansibleEnabled
+  - it: should allow ansibleVenvEnabled to be disabled independently of ansibleEnabled
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationSettings:
+        enabled: true
+        ansibleEnabled: true
+        ansibleVenvEnabled: false
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ansible_enabled")].value
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].env[?(@.name == "automation_gateway_ansible_venv_enabled")].value
+          value: "false"
+
+  # Test: containerPort matches applicationPort, not service.port
+  - it: should set containerPort to applicationPort value
+    set:
+      statefulset.enabled: true
+      serviceAccount.name: "test-sa"
+      applicationPort: 9000
+      service:
+        port: 443
+      applicationSettings:
+        enabled: true
+        env: {}
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 9000
+
   - it: should set the expected environment variables with LDAP is disabledset
     set:
       statefulset:

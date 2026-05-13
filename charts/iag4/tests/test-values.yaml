@@ -136,7 +136,7 @@ livenessProbe:
 # initial delay is failure. If a container does not provide a readiness probe, the default
 # state is success. These are suggested values.
 readinessProbe:
-  readinessProbe: false
+  enabled: false
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
